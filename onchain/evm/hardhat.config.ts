@@ -1,4 +1,4 @@
-import {HardhatUserConfig} from 'hardhat/config';
+import type {HardhatUserConfig} from 'hardhat/config';
 
 import HardhatNodeTestRunner from '@nomicfoundation/hardhat-node-test-runner';
 import HardhatViem from '@nomicfoundation/hardhat-viem';
