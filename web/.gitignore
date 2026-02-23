@@ -11,3 +11,8 @@ static/pwa
 *.local
 
 src/lib/deployments.ts
+
+# assets
+static/assets
+.assetpack
+src/lib/manifest.json

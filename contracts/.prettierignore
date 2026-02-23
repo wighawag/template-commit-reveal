@@ -1,10 +1,6 @@
-############################################
-# .gitignore
-#############################################
+# .gitignore -------------------
 /node_modules
 
-.vscode/*
-!*.default
 *.local
 
 # rocketh
@@ -23,9 +19,8 @@ cache
 artifacts
 docs
 
-.vscode/*
-!*.default
-#############################################
+dist/
+# ---------------------------------
 deployments
 package.json
 pnpm-lock.yaml

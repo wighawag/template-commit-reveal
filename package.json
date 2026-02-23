@@ -1,5 +1,5 @@
 {
-  "name": "template-onchain-app",
+  "name": "template-commit-reveal",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,11 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "patchedDependencies": {
+      "@tevm/actions": "patches/@tevm__actions.patch",
+      "@tevm/common": "patches/@tevm__common.patch"
+    }
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",

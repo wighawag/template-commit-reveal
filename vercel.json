@@ -5,5 +5,12 @@
   "outputDirectory": "web/build",
   "public": true,
   "trailingSlash": true,
-  "framework": null
+  "framework": null,
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "feat/*": false,
+      "deployment/*": true
+    }
+  }
 }

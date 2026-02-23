@@ -1,10 +1,10 @@
 import {dev} from '$app/environment';
-import {get, writable} from 'svelte/store';
+import {resolve} from '$app/paths';
+import {notifications} from '$lib/core/notifications';
 import type {Logger} from 'named-logs';
 import {logs} from 'named-logs';
+import {get, writable} from 'svelte/store';
 import {handleAutomaticUpdate, listenForWaitingServiceWorker} from './utils';
-import {notifications} from '$lib/core/notifications';
-import {resolve} from '$app/paths';
 
 const logger = logs('service-worker') as Logger & {
 	level: number;

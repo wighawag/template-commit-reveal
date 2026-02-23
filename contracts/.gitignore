@@ -7,7 +7,6 @@ generated
 deployments/localhost
 deployments/hardhat*
 deployments/lan
-deployments/default
 _metadata
 
 # hardhat

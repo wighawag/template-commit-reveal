@@ -1,5 +1,5 @@
-import {params, globalQueryParams} from '$lib/core/config';
 import {resolve} from '$app/paths';
+import {globalQueryParams, params} from '$lib/core/config.js';
 import {getParamsFromURL, queryStringifyNoArray} from './url.js';
 
 export function route(p: string, hash?: string) {

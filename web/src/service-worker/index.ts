@@ -284,8 +284,8 @@ async function handlePush(data?: string) {
 		title: 'Notification',
 		options: {
 			body: 'You have a new notification',
-			icon: '/favicon.png', // TODO template it ?
-			badge: '/favicon.png', // TODO template it ?
+			icon: '/icon.png', // TODO template it ?
+			badge: '/icon.png', // TODO template it ?
 		},
 	};
 

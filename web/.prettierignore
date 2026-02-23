@@ -9,10 +9,17 @@ node_modules
 
 # pwag
 static/pwa
-src/app.html
 
 # Env
 *.local
+
+src/lib/deployments.ts
+
+# assets
+static/assets
+.assetpack
+src/lib/manifest.json
+
 ############################################
 
 pnpm-lock.yaml

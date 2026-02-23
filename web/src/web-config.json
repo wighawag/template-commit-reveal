@@ -1,8 +1,8 @@
 {
-	"name": "Template Website",
-	"title": "Template Website",
-	"description": "A template to build website",
-	"canonicalURL": "https://localhost",
+	"name": "template-commit-reveal",
+	"title": "template-commit-reveal",
+	"description": "template-commit-reveal",
+	"canonicalURL": "https://example.com",
 	"ENSName": null,
 	"themeColor": "#000000",
 	"appleStatusBarStyle": "black-translucent",
