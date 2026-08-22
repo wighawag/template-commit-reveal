@@ -1,0 +1,5 @@
+{
+  "branches": {
+    "main": {"stemBranch": "with/local-signer"}
+  }
+}
