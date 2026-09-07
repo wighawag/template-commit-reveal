@@ -1,5 +1,6 @@
 {
   "branches": {
     "main": {"stemBranch": "with/local-signer"}
-  }
+  },
+  "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit"
 }
