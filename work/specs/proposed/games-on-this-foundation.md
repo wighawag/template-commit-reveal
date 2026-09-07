@@ -245,7 +245,7 @@ Three things it turned up, all worth carrying:
 
 - **The two ways to get a derivation wrong are both silent.** A checksummed address and a lowercased one are the same address and different text; an identity missing from the message gives every identity of an account the same secret. Neither throws. Each produces a commitment the player cannot open, discovered when the reveal window shuts on the stake. That is the argument for the derivation living in the framework rather than being written per game, and both are pinned by tests that were checked by mutation (3 of 7 fail on either).
 - **The round suite had no teeth for the identity reaching `makeSecret`.** Removing it passed all sixteen existing round tests. There is now a seventeenth, and this is the second time in two phases that a mutation found a gap a green suite was hiding.
-- **The acceptance criterion is not met by this, exactly as D9 predicted, and e2e says so out loud.** reveal-or-die's missed-reveal test still misses: it commits, returns in a fresh context with empty local storage, and the round has no memory that it committed at all. The secret is recoverable now; the ACTIONS and the knowledge that a commitment exists are not. What remains is the game's enumeration plus item 1 of the known-not-to-fit list (`restore()` never asks the chain, though `getCommitment(identity)` is right there). **Do not read the derived secret as having closed this item.**
+- **The acceptance criterion is not met by this, exactly as D9 predicted, and e2e says so out loud.** reveal-or-die's missed-reveal test still misses: it commits, returns in a fresh context with empty local storage, and the round has no memory that it committed at all. The secret is recoverable now; the ACTIONS and the knowledge that a commitment exists are not. What remains is the game's enumeration plus item 1 of the known-not-to-fit list (`restore()` never asks the chain, though `getCommitment(identity)` is right there). **Do not read the derived secret as having closed this item: it was the PREREQUISITE, not the fix.** D10 is the fix, and it is smaller than this item looked before the secret existed.
 
 **Phase 2: identity.** N3's refactor on `main` (the alias, and the test that enforces it), then `with/nft-identity`, then re-point reveal-or-die's `stemBranch` at it.
 
@@ -358,6 +358,32 @@ Name the assumption underneath it, because it is silent when it fails: **this re
 **Migration is not a constraint.** Nothing on this stack has a live deployment with users, so the derivation may change freely and no design effort goes on carrying an in-flight round across the change. D7 hedged on this ("land it before anything has a live deployment depending on the old message"); the hedge is spent, and the window is now rather than conditional.
 
 **Built 2026-09-07; one thing the build settled that the decision left open.** The message needs a CANONICAL SPELLING for each of its parts, which is not a detail: it is a third silent failure alongside the two D9 already names. The address is lowercased, a bigint identity is decimal, an address identity is lowercased. Anything that changes the TEXT changes the signature, changes the secret, and loses the round, with nothing raised anywhere. `game/core/secret.ts` normalises once, at construction, and says so at the line that does it.
+
+**D10. The round RECONCILES WITH THE CHAIN. It is not a storage-recovery feature, and it is one method on the framework.** Decided 2026-09-07, after the derived secret landed and the acceptance criterion it was supposed to satisfy still failed.
+
+**The name was the problem.** "Surviving cleared local storage" sounds like a 24h-mode nicety. But a cleared browser, a second device, a second browser, a private window, a reinstall and a storage write that silently failed all produce the IDENTICAL state: the chain holds a commitment this browser knows nothing about. A second device is not a mode, so this is not a mode's feature.
+
+**The discovery already happens and is thrown away.** `missed-reveal.ts` already reads `getCommitment(player)` and already compares it to the current epoch, and the live case is one branch that sets `Clear` and returns, because the only question it was ever asked was "am I blocked?". Nothing new has to be fetched. That is the whole reason this is affordable, and it is why the work is not a subsystem.
+
+**The too-late case needs NOTHING, which was checked rather than hoped.** `epochDuration = commitPhaseDuration + revealPhaseDuration`, with no trailing segment, so a commitment in the CURRENT epoch is always still openable: you are either in the commit phase or in the reveal phase. The moment the reveal window shuts, the epoch has advanced, and the existing `missed-reveal` path reports `Blocked` and offers the settlement the player presses for themselves. So "too late" is already built, and the only gap is the LIVE epoch.
+
+Worth keeping the general form even though it costs nothing here: **too-late is a function of WHEN the loss happened relative to the reveal window, never of the mode.** A 24h game wiped ten minutes before its deadline is exactly as stuck as a three-minute one; the mode only shifts the probability, so nobody can configure their way out of it.
+
+**The actions come from one of three places, and the HASH judges all three.** The secret is recoverable now; the plan is not, because the chain holds only a hash.
+
+1. **Local storage still has it** - the ordinary reload, today's path.
+2. **The game ENUMERATES it.** Available only where the action space is small, and the cost runs OPPOSITE to the time available, which is what lets one mechanism serve both modes: a fast game has a small space precisely because that is what makes it fast (reveal-or-die is three steps over four directions plus an exit, about 125 candidates), so enumeration finishes inside a short reveal window with no player present. A slow game has a large space and hours to ask.
+3. **Ask the PLAYER**, and let the hash decide. They usually remember what they planned; they re-enter it through the planning UI that already exists. This is the general route and it is better than it sounds: it cannot be abused, since you cannot "recover" a plan you did not commit and the hash simply refuses it, so exposing it grants an attacker nothing; it is action-space-independent, so it serves conquest as well as reveal-or-die; and it degrades to exactly today's outcome, except that the player was TOLD.
+
+**ISOLATION IS A REQUIREMENT OF THE DESIGN, not an aspiration.** The naive version touches the round's state machine, every consumer that switches on `RoundState`, the seams, the missed-reveal store, the UI and the composition root. Instead:
+
+- **The framework gains ONE method: `round.adopt(persisted)`**, which is the body of the existing `restore()` taking a `PersistedRound` from somewhere other than storage. **No new `RoundState` member**, because there is nothing new to represent: a reconstructed round is a restored round, and the round must not be able to tell the difference.
+- **Everything else is the GAME's and lives in the game's own directory**: the chain read (already there, in `missed-reveal.ts`), the enumeration if it has one, and the re-enter UI if it wants one. The framework grows no chain reader, no modal concept and no enumeration budget.
+- A game that wants none of this wires none of it, and pays nothing.
+
+The check is `adapter.buildCommitment({actions, secret})` against the chain's hash, which already exists and needs no helper.
+
+**Do not pre-build the 24h answer here.** For a genuinely long round the real defence is the SCHEDULER: `commit()` already hands `secret`, `epoch` and `revealDueAt` to whatever will reveal, so a fuzd-backed game survives a wiped browser completely because the payload left the device at commit time. Reconciliation is the BACKSTOP for when there is no scheduler, and Phase 5 is where the scheduler lands.
 
 ## What is deferred, and by whose decision
 
