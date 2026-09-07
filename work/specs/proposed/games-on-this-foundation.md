@@ -1,0 +1,357 @@
+---
+title: Games on this foundation - the game tree, the level boundary, and the mode matrix
+type: prd
+status: proposed
+created: 2026-09-07
+relates-to: work/specs/proposed/play-modes.md, jolly-roger `work:work/specs/proposed/service-layers.md`
+---
+
+> **If you scaffolded a game from this template, delete this file.** It is maintainer material: it plans the TEMPLATE TREE (which repo stems from which, what lives at which level, which branches exist), not the game you are building. Nothing in your app reads it, and keeping it means it cascades into your descendants forever.
+
+# Games on this foundation
+
+## What this decides, and what it deliberately does not
+
+Two decisions are already made elsewhere and are treated here as settled:
+
+- **Service layers are `with/*` branches on jolly-roger**, in a flat fan with exactly one integration branch, under rules R1 to R6. See `work:work/specs/proposed/service-layers.md` in jolly-roger. This document does not reopen the fan.
+- **Play modes are a seam, not a branch**, because modes are mutually exclusive alternatives while layers are additive capability. See `work/specs/proposed/play-modes.md`. This document does not reopen that either; it answers that spec's four open questions with evidence, and adds the axes it does not cover.
+
+What is genuinely undecided, and what this document is for:
+
+1. Where each of the five games stems from, given that four more are coming and two are dormant.
+2. Where the level boundary sits between this template and reveal-or-die, now that reveal-or-die is a finished game and the template is not.
+3. How `with/nft-identity` is shaped so that it does not become a permanent conflict zone.
+4. What the mode matrix actually consists of, which parts are contract work, and in what order they have to be taken.
+
+## Status, measured 2026-09-07
+
+`HANDOFF.md` still says reveal-or-die is untouched. It is not, and that changes the plan.
+
+| repo | stem | state |
+|---|---|---|
+| `jolly-roger` | template-svelte tree | `main`, `with/local-signer`, `with/hosted-account`, `website`. Clean. |
+| `template-commit-reveal` | `jolly-roger@with/local-signer` | fully merged with its stem. Clean. |
+| `reveal-or-die` | `template-commit-reveal@main` | **126 ahead, 0 behind.** Adds ~40 files under `lib/world`, `lib/input`, `lib/ui/loading`, `lib/debug`; deletes `lib/placement` exactly as designed. **Modifies only 10 inherited files**, one of them framework (`game/core/round.ts`, +68, one option). |
+| `bomber-world` | `reveal-or-die@main` | **1067 commits behind.** Different layout (`onchain/evm`, not `contracts`). |
+| `catacombs`, `stratagems` | none | separate stack generation; dormant by decision, see below. |
+| `conquest-v1` | `jolly-roger@main` directly | 24 ahead, own pre-seams `lib/game` and `lib/render`, move pipeline unported. |
+
+### Baselines, measured at the start of Phase 0
+
+Written down because `HANDOFF.md`'s numbers have moved twice already and a suite that silently stops being collected looks exactly like a clean run. Both repos clean, both green, measured against `template-commit-reveal@22cccc83` and `reveal-or-die@b0c2691`.
+
+| suite | template-commit-reveal | reveal-or-die |
+|---|---|---|
+| `contracts:test` | 13 passing (13 nodejs, 0 solidity) | 9 passing (9 nodejs, 0 solidity) |
+| `web:check` | 0 errors, 0 warnings | 0 errors, 0 warnings |
+| `test:unit` | 1348 in 110 files (server) + 65 in 10 files (client) | 1618 in 128 files (server) + 72 in 11 files (client) |
+| `test:e2e` | 50 passed | 49 passed |
+| `test:e2e`, `CI=1`, re-measured at the end | 50 passed, no retries | 49, one retried |
+| `contracts lint` | 29 errors, pre-existing | 67 errors, pre-existing |
+| `format:check` | **green** | web green; contracts 7 files, pre-existing |
+
+After Phase 0, the only number that moves is reveal-or-die's unit count, and it moves by exactly the duplicated suite: 1592 in 126 files (server) and 65 in 10 files (client), which is 26 and 7 fewer in three fewer files. Everything else is unchanged, including both e2e counts.
+
+Two of those correct `HANDOFF.md` rather than merely updating it. Its unit figure (744 in 66 files) and its e2e figure (21) are roughly half of what is actually collected now, and its standing instruction to leave `web/playwright.config.ts` and `web/src/lib/core/metadata/Head.svelte` unformatted is spent: upstream has since reformatted both, `format:check` is green here, and following the instruction now would be the divergence it was written to prevent.
+
+Two readings of that table matter.
+
+**The seams held.** A whole game ported onto them and changed one framework file. That is the strongest evidence available that the framework/game split is real, and it is what makes everything below affordable.
+
+**The descendant that nobody cascades to becomes a fork.** 1067 commits is not a merge any more, it is a hand port. That is the cost this plan is trying not to pay twice.
+
+## The one rule that assigns everything
+
+Three mechanisms are available, and the whole design is knowing which one a thing wants.
+
+| mechanism | varies with | price |
+|---|---|---|
+| **repo or branch** | the project | merge tax and a verification node, paid forever |
+| **package or optional dependency** | the build | a version boundary and a release cadence |
+| **seam plus configuration** | the deployment or the session | none structural |
+
+The test that assigns a thing: **can two values of it coexist in one built app and be chosen at runtime?**
+
+If yes, it is not a branch. Conquest wants a launch menu offering online, offline, hotseat and lobby in one build, so for the game that needs modes most, modes cannot be branches. If they cannot be branches there, they must not be branches upstream either. That is the same conclusion `play-modes.md` reaches from composability, arrived at from a different direction, which is why it is worth trusting.
+
+The corollary that is easy to miss: **the deciding cost of a branch is install and CI, not bundle size.** A layer that drags a service, a workspace or a dev pane costs a non-adopter something real. A capability that is only code costs them nothing that a dynamic import does not already solve.
+
+## Decision 1: the game tree
+
+```
+jolly-roger@main
+├─ with/indexer, with/webevm                    (service-layers PRD: stem main, no signer needed)
+└─ with/local-signer
+   ├─ with/hosted-account, with/messaging, with/sync
+   ├─ with/notifications        stem: [with/indexer, with/local-signer]
+   ├─ with/all                  the single integration branch
+   │
+   └─ template-commit-reveal@main              framework + address-keyed reference game
+      │                                        (stratagems' identity shape)
+      ├─ stratagems                            dormant, compile-only member
+      └─ with/nft-identity                     identity is a token; acquisition proven
+         ├─ reveal-or-die  ──▶ bomber-world    dormant, compile-only member
+         ├─ catacombs                          dormant, compile-only member
+         └─ conquest-v1                        moves off jolly-roger onto here
+```
+
+**Why `with/nft-identity` and not a second template repo.** Four of the five games identify a player by a token (`avatarID`, `characterID`, `empireID` over an owned avatar); one identifies by address. Decision 3 in `HANDOFF.md` deliberately makes the reference game address-keyed so that `PlayerIdentity` is exercised as a type parameter rather than assumed. That decision is right and stays. But it leaves identity ACQUISITION (mint, buy, deposit, choose which one you are playing) with no user in the template, and unproven code in a template is the thing everyone regrets. A branch where the reference game becomes token-keyed gives acquisition a user without giving up the address case.
+
+**Why the dormant games still join the tree.** Stratagems and catacombs are not being revived now. Joining them anyway is worth it for one reason: a compile-only member is a real test of whether a seam fits, and it is the cheapest test there is. A cascade that breaks stratagems' build has found something. The commitment is deliberately small: they participate in `check`, not in e2e, and their `verify` command says so.
+
+**Where a game gets a service layer from.** This is the one place the tooling does not currently reach. Cross-repo inheritance in `offshoot-fanout` is single-branch (`stemBranch` is a string), and in-repo integration nodes (`stem: [a, b]`) only combine branches inside one repo. So a game cannot inherit `jolly-roger@with/messaging` and `template-commit-reveal@with/nft-identity` through the tool.
+
+Three answers, in the order they should be reached for:
+
+1. **Hand merge.** The game shares history with jolly-roger, so `git merge jolly-roger/with/messaging` is a real merge with a real merge base, today, with no tool change. Cheapest for the first game that wants one layer.
+2. **Earn a branch.** If a second game wants the same combination, that combination has earned a node: it becomes a branch in this repo whose cross-repo edge names the jolly-roger branch that carries the layer, and the games re-point their `stemBranch` at it. Re-pointing is cheap precisely because history is shared.
+3. **Extend offshoot.** We own it. The minimal principled change is to let a branch carry BOTH an in-repo `stem` and a cross-repo `stemBranch`, making the graph a DAG across repos rather than only within one. Do not do this speculatively: the trigger is (2) recurring, and a refusal that keeps recurring is the demand signal, exactly as the service-layers PRD argues for `with/all`.
+
+## Decision 2: the level boundary, or "what does reveal-or-die add?"
+
+reveal-or-die was built as an almost-template with branding. Most of it is not reveal-or-die's.
+
+**The test, per file: would another game on this foundation have to write this?** If yes, it belongs upstream, whatever it is currently called. The precedent is already in the tree: `lib/input/README.md` in reveal-or-die applies exactly this test to itself and concludes it is a backport candidate.
+
+That precedent is also the warning. The backport was done by **writing the same thing again upstream** (`d16a3d95`, "render: keyboard and gamepad, as intent recognisers beside gestures") while reveal-or-die kept using its own copy (`57f5375`, "input: keyboard and gamepad as intent recognisers, in gestures.ts's shape"). Both now exist in reveal-or-die's tree, they differ by about thirty lines each, only the local copy is imported, and the inherited one is referenced only by a README. That is `check-shared-divergence.sh`'s failure mode happening across a repo boundary, where nothing checks it. **A backport is a move, not a re-implementation, and the descendant's copy is deleted in the same change.**
+
+**What the thirty lines turned out to be, measured in Phase 0, because it changes what the warning is about.** The two copies are identical in every executable line, in all three modules and in all three test files; every differing line is a doc comment, plus the import path in the tests. Upstream is not a divergent re-implementation, it is the same code with its provenance generalised: where reveal-or-die names `docs/audits/03-renderer.md` 3.4, the deleted `render/keyboard-controller.ts` and `render/gamepads.ts`, `$lib/world/controls.ts` and "a turn is three moves long", upstream says "a game built on this template" and "a handful of moves". It had also already absorbed the descendant's one substantive change: the two-kind focus guard that reveal-or-die added in `26a1362` (a text field consumes every key, a focused button consumes only Enter and Space) landed upstream two days later inside `d16a3d95`. So the reconciliation was a pure deletion, and upstream's copy needed nothing.
+
+Do not read that as the duplication having been harmless. **It was caught while it was still one commit old, and the cost was paid in the only currency available to it**: for five days two repos each maintained their own copy of the same recognisers and their own copy of the same tests, and the second substantive change to either would have been the one that diverged. What the measurement narrows is the lesson, not the rule. The failure mode is not "a re-implementation drifts"; it is that **a re-implementation is indistinguishable from a move until somebody diffs it**, and nothing in the tree does that across a repo boundary. The rule stands unchanged, and it is cheaper to obey than to audit.
+
+### What goes up to `main`
+
+| what | where it is now | why it is not reveal-or-die's |
+|---|---|---|
+| ~~input recognisers~~ | ~~`lib/input/*`~~ | **DONE, Phase 0.** Nothing to reconcile upstream (the copies were identical bar their comments), so the move was the deletion: `lib/input/` and its tests are gone from reveal-or-die and `lib/world/controls.ts` imports the inherited `game/render/*` |
+| the acquisition rail | `lib/world/purchase.ts` (858), `pending-purchase.ts`, `PurchaseModal` | generalise to "acquire what lets you play, in ONE transaction, with a gas stipend to the signer, recoverable after a reload". Main's reference game buys its ERC20 stake through it, so the rail has a user on `main` and only WHAT is acquired changes on the branch |
+| asset pipeline and load gate | `vite.assetpack.ts`, `world/render/assets.ts`, `LoadingSprite`, `ui/loading/*` | every game has assets; a template whose example has none never proves the pipeline |
+| epoch countdown UI | `world/ui/GameClock.svelte` | the epoch is framework, so its display is too |
+| liveness | `game/core/round.ts`'s `commitWhenIdle` | already flagged in its own comment; a decaying stake is one of the two ways to have a stake at all |
+| board handover | `world/hold.ts` (218), `display-plan.ts`, `reveal-outcome.ts` | these are the client half of "the round never reconciles with the chain", item 1 of the known-not-to-fit list. They are framework gaps that reveal-or-die filled locally |
+| diagnostics | `lib/debug/diagnostics.ts` (322) | nothing in it is about avatars |
+| config-off-linkedData, including absent parameters | `world/config.ts` | the pattern exists upstream; reveal-or-die's handling of a deployment that predates a parameter is the part worth taking |
+
+### What goes to `with/nft-identity`
+
+`world/active-avatar.ts` (which token am I playing), `world/deposited.ts` (is it in custody), the identity type binding, the ownership reads, and the `Avatars` / `Locker` / sale contracts.
+
+### What stays reveal-or-die
+
+The game and the brand: terrain and maze generation, walk animation, `AvatarObject`, the avatar renderer, the d-pad mapping, tutorial content, the death notice's wording, the art, `web-config.json`, and the movement, collision and exit rules in its contract.
+
+After this, reveal-or-die is **the reference finished game**: the place where a complete experience, real art, a real deployment and an e2e suite that plays a real round are proven together. That is a valuable role and it is not the same role as the template's.
+
+## Decision 3: shaping `with/nft-identity` so merges stay cheap
+
+The acceptance criterion is the one the service-layers PRD already set: `with/hosted-account` shape (24 merges, 3 conflict events, none in application source), not `with/local-signer` shape (44 merges, 65 conflict events). A branch that comes out local-signer-shaped means the seam is wrong, not that the feature is big.
+
+Six rules, each aimed at a specific conflict source.
+
+**N1. The branch ADDS files. Every edit to a file that also exists on `main` is a permanent conflict site**, because `main` keeps developing that file. The branch's README lists its shared-file edits explicitly, and the list is a budget: growing it needs a reason.
+
+**N2. Shared files change by ONE LINE, following `mode.ts`.** `TARGET_STEP` is the proven pattern: one constant, one line of difference across three branches, everything else byte-identical. Identity gets the same treatment: a single module on `main` (`game/identity.ts`) exports the identity type alias and constructs the identity provider, and it is the only shared file the branch edits.
+
+**N3. No shared file names `address` as the identity.** Everything goes through the alias, including tests. This is what makes N2 possible at all, and it is a refactor on `main` that must land BEFORE the branch exists, not alongside it.
+
+**N4. Contracts vary by overriding a virtual internal, never by editing a store.** The precedent is in the tree and it works: bomber-world's `_epoch()` is `virtual` and dispatches timed against manual internally. Do the same for identity resolution, so the branch overrides `_playerOf(sender, id)` and touches nothing else. Contracts are not inherited by games (decision 1 in `HANDOFF.md`), but they ARE cascaded within this repo, so this is about the branch, not about descendants.
+
+**N5. Enforce it with a test, not with prose.** This repo already has boundary tests that fail a build (`framework-boundary.test.ts`, `svelte-conventions-boundary.test.ts`). Add one that fails when a shared module names the concrete identity type.
+
+**N6. Adopt jolly-roger's `tooling` branch here**, and run `check-shared-divergence.sh` with `FEATURES=with/nft-identity` after every cascade. Its whole point is the failure this branch will otherwise hit: a cascade whose conflicts were all resolved correctly, where other hunks merged cleanly in the descendant's favour and left the shared file holding two versions of the same logic.
+
+## Decision 4: the mode matrix has seven axes, not two
+
+The A/B split (fixed roster versus open entry) is real but it is not the top of the tree. The modes wanted are points in a product of seven independent axes. Naming them separately is what stops the matrix from becoming a lattice of branches.
+
+| axis | values | lives in | status |
+|---|---|---|---|
+| **World** | remote persistent / remote LAN / embedded in the tab | client wiring: a world is a CONTEXT, an identity is a CONNECTION | designed, not built. `jolly-roger:docs/worlds-and-identities.md` (on the archived `variant/offline` branch) names the one unlocking change: `createContext` takes its connection as a parameter. `with/webevm` is Wave 1 of the service-layers PRD |
+| **Membership** | open entry / closed roster | **contract**, plus a lobby | nothing anywhere. The lobby is not only roster formation: it is where everyone is PROVISIONED (account funded, identity acquired) before the game starts, which is what makes a closed roster possible at all |
+| **Epoch advance** | fixed timer / timer with early advance / unanimity only | **contract** (`_epoch()`), and the client's epoch store | prototyped in bomber-world: `ManualEpoch` state, `_moveToNextEpoch`, `_moveToNextPhase`. Its two TODOs are exactly the missing work |
+| **Reveal agency** | this browser / scheduler / fallback / third party | seam, done | `autoReveal` is a three-way and `commit()` already carries secret, epoch and `revealDueAt`. No fuzd adapter in this lineage yet (`with/fuzd`, Wave 4) |
+| **Identity** | address / token / token plus controlling entity | type parameter, done. **Acquisition has no seam** | Decision 1 above |
+| **State source** | poller / indexer / local simulation | seam, one implementation | indexer adapter unwritten; `with/indexer` is Wave 1 |
+| **Opponents** | humans / NPC keys / hotseat | client: several ACCOUNTS against one world | the worlds doc's cheap case: a world gets a context, an identity gets a connection |
+
+### The contract side is cheaper than it looks
+
+`_epoch()` in bomber-world is already `virtual` and already dispatches between a stored `ManualEpoch` and the timed formula. So the shape is proven: **epoch policy is one overridable internal plus a small piece of stored state**, not a fork of the game contract. What is missing is the hybrid (timed with early advance), and the membership count it needs.
+
+One thing in that prototype does not survive. `SKIP_COMMIT` (skip the commit phase entirely, derived from both phase durations being zero) is **dropped rather than formalised**. It was hotseat's mechanism and hotseat has a better one (D4), which leaves it with no consumer: catacombs commits against randomness rather than against opponents so it needs commitments even solo, and the other four games are PvP. Keeping it would mean a second resolution path through the round, forever, for nobody. Development and testing do not justify it either, since a test that skips the commit exercises a path nothing ships. The bomber-world port therefore keeps manual epochs, drops the commit-skipping, and stops deriving one from the other; conflating them is what made it look like a mode.
+
+### Five derived constraints, which are the actual design
+
+These follow from the axes rather than being choices, and each one closes a trap.
+
+**C1. Early advance requires a closed roster, and the denominator is not the player list.** "Everyone has committed" has no denominator under open entry, so the epoch-advance axis is constrained by the membership axis and early advance can never be offered as an independent switch. What the contract needs is a count, not a roster, and it needs the RIGHT count: **members the epoch waits for**, which is not the same set as members who are alive. A game may keep a silent player in the world while no longer blocking on them (reveal-or-die's `numMissesAllowed` is exactly that shape: three missed rounds before the avatar dies, and it is a deployment parameter rather than a constant). So the count decrements when a member stops being waited for, and the game decides separately, and later, what becoming silent costs them.
+
+**C2. Advance early only on unanimity, never on a majority or a quorum.** If a subset can close a phase, fast players time out slow ones and the reveal phase becomes a race, which is the order-independence failure one level up: whoever is quickest decides the outcome, and committing bought nothing.
+
+**C3. An early advance may only WIDEN a window, never shorten one.** Early advance opens the next phase early; it never closes the current one early. This is what keeps a 24-hour game with early turnaround coherent: the reveal window becomes "as soon as everyone has committed, until the nominal deadline", so a scheduled reveal encrypted against the nominal time still lands inside it, and a player who has not acted still has their full clock. Stated the other way round, C2 and C3 together make early advance a **strict Pareto improvement**: it can never make a game worse than the timer alone, which is the property `play-modes.md` hoped could be stated explicitly.
+
+**C4. Under C2 and C3, a scheduled reveal can only ever be redundant, never lost.** If the epoch advanced early, everyone revealed, so a scheduler firing afterwards submits a duplicate. A duplicate reveal costs one reverted transaction; a missed one costs the stake. So scheduled reveals and early advance compose, which was not obvious and is the reason to write C3 down rather than discovering it.
+
+**C5. Advancing the round is its OWN transaction, never a rider on the last reveal.** Tempting to have the contract advance automatically when the last player reveals, and wrong for three reasons. It makes `reveal` mean something different depending on whether you happened to be last, so the mode leaks into the one call every mode shares. It makes that reveal's gas depend on winning a race, which is the worst possible input to the classify-and-remedy path this app already has for out-of-gas failures, and it matters for a game that budgets a reveal tightly. And it is not retriable: a bundled advance stranded by an unrelated revert leaves the round stuck, while a separate call can be made again, by anyone.
+
+Two constraints on that call. It is **permissionless but strictly conditional**: it may only do what the rules already permit (the timer expired, or unanimity), never anything discretionary, so allowing anyone to call it grants nothing. And the liveness assumption it introduces is bounded, because it only exists in the modes where somebody is present anyway: a purely timed epoch needs no call at all, since the epoch simply is what the clock says.
+
+### Three things the matrix contains that are not free
+
+**Offline play keeps the code path and none of the guarantee.** The foundation rests on "something must be at stake, or nobody has to reveal". In an embedded world the player owns the chain, and webevm's `dumpState` / `loadState` makes rewinding a documented feature rather than an attack. So single-player and hotseat keep commit-reveal for fidelity, not for safety, and the framework must never grow an assumption that the two are equivalent. The sharp corollary, and it is narrower than it first looks now that hotseat keeps commitments (D4): what the chain shows an NPC is a hash, so cheating through the CHAIN is structurally impossible in every mode. What is not enforced is the browser, where the player's plan sits in memory before it is committed. So the rule for an NPC is that it may read only what the chain would tell it, and in an embedded world that is a discipline rather than a guarantee.
+
+**There are two reasons to commit, and only one of them is about opponents.** Committing hides a move from another player (PvP), and it binds a player before randomness resolves (PvE anti-grinding, which is catacombs' whole solo design). That is why "solo, so nothing to hide" does not follow, and it is the reason `SKIP_COMMIT` has no consumer even in a single-player game with randomness in it.
+
+**A zero-timer game can deadlock, and the way out is a forfeit, not a clock.** With no clock nothing protects the round from a player who never acts. On one device that is not a problem, and on a LAN it is usually not one either, because the players can talk to each other; what they cannot do by talking is unblock the contract. So a zero-timer world needs an explicit forfeit: someone can remove a member from the set the epoch waits for.
+
+Three things follow, and they are why this is a seam rather than a rule.
+
+- **Forfeit and the existing missed-reveal settlement are the same mechanism at different triggers.** In a timed game the clock produces the missed reveal; with no clock a peer has to produce it. `acknowledgeMissedReveal` is already the settlement path, so what is new is who may fire it and when, not what it does.
+- **A third party firing it must be bounded**, or forfeiting an opponent becomes a move. Two bounds are available and a game picks one: unanimity of the other waited-for members, or wall-clock silence. The second is available even here, because an untimed EPOCH does not mean an untimed CHAIN: `block.timestamp` still advances, so "has not acted for an hour" is answerable on chain while epochs remain manual.
+- **What forfeiting COSTS is the game's, and it is not one answer.** Dropping out of the denominator has to be immediate, since that is what unblocks the round. Whether the avatar dies with it, or becomes prey for three turns the way a silent player already does, is the game's rule and belongs behind the same seam as the death rule. This is C1's two-count distinction showing up as a user-visible feature rather than as bookkeeping.
+
+### Answers to `play-modes.md`'s open questions
+
+1. **Which hotseat option?** The one that keeps commit-reveal, per D4. Not per game, and not the one that drops the commit phase.
+2. **Roster or count?** A count of waited-for members is enough for early advance, and it must be maintained on join and on leave, death or forfeit (C1). Do not store the roster until something else needs it.
+3. **Does early advance need griefing protection?** No: the clock is the protection, and under C2 and C3 early advance is a strict Pareto improvement. Except with no clock at all, where the deadlock above is real.
+4. **Do modes interoperate?** Yes, and this settles the shape: hotseat is inherently a closed roster, and conquest wants several modes in one build behind a launch menu. So they are independent seams selected together, never one mode enum.
+
+## Order of work
+
+Sequenced by what gets more expensive if deferred, not by size.
+
+**Phase 0: stop the bleeding. DONE, 2026-09-07.** Finish the input backport as a MOVE (delete reveal-or-die's copy, reconcile the thirty-line delta upstream). Add `verify` to the `fanout.config.json` on `template-commit-reveal@offshoot` and `reveal-or-die@offshoot`; both are currently ungated, which means a cascade can land red and nothing says so. Acceptance: a fanout with `--verify` is green end to end. Adopting jolly-roger's `tooling` branch is deliberately NOT part of this phase: `check-shared-divergence.sh` compares files shared between a base and its feature branches, and this repo has none until Phase 2 creates one, so adopting it now would install a check with nothing to check.
+
+Four things it found, none of which change the phase's outcome.
+
+- **The delta was documentation, not behaviour**, so the reconciliation was a deletion and upstream's copy needed no change. See Decision 2 for the measurement and for what it does and does not narrow about the rule. reveal-or-die's suite drops by exactly the 26 server and 7 client tests those three files held, and the identical inherited copies under `web/test/lib/game/render/` still run them, so the coverage is unmoved rather than merely believed to be.
+- **reveal-or-die had no `offshoot` branch at all**, rather than one carrying a config without `verify`. The practical difference matters for the next repo: `offshoot-fanout config set` creates the orphan branch with plumbing, so nothing is checked out and the working tree is never touched, and the config lists `main` explicitly so that `deployment/rise-testnet` cannot wander into a cascade later.
+- **`verify` is copied from jolly-roger verbatim** (`pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit`) and deliberately carries no e2e. e2e needs ports, a chain and about twelve minutes per node; it is run by hand for the nodes a change touches, which is what was done here. A gate that is too slow to run is a gate nobody runs. Note the consequence, since it is the gate's one blind spot and Wave 0.3 of the service-layers PRD is a list of things it would have missed: **`verify` proves the text still compiles and the units still pass, and proves nothing about behaviour in a browser.**
+- **The parallel e2e run flakes, in BOTH repos, one test per run**, which matters because `HANDOFF.md` records the opposite ("e2e used to fail in parallel and no longer does", fixed by the `getCellsInZones` index). Measured across four parallel runs on trees that differ from a green baseline by nothing or by markdown: one failure each, a DIFFERENT test every time, and every one of them a timeout or a wait rather than a wrong answer (`layout-shell` on a `page.goto` `ERR_ABORTED`; `contracts` write-function reading `AvatarsSale_Proxy` where it wanted `Game`; `out-of-gas` waiting out 120s for `Revealed` and getting `Idle`). Each passes alone, and the serial `CI=1` runs are clean: 50 of 50 here with no retries, 49 in reveal-or-die with one retried.
+
+  **The first version of this note said the template's own run was 50 of 50 and concluded the problem was reveal-or-die's. That was wrong, and it was wrong in the most ordinary way: it generalised from one earlier green run taken hours before, on a quieter machine.** The template flaked on the very next parallel run, on a tree whose only difference from that green one is two markdown files. So it is shared, and the load matters: the green baselines were taken at the start of the session and the failures came after several hours of back-to-back suites, at a load average of about 12 on 16 cores.
+
+  It is NOT this phase's and did not arrive with this phase's change, which moves an import path and nothing else. The handoff's own lesson applies unchanged and is the reason to leave it alone until it is measured: **a failure whose only symptom is under parallel load is a resource problem until proven otherwise**, and the tempting fixes (raise the timeout, add a retry, run serially) all hide it. The last one of these was cracked in ten minutes with `curl` in a loop against the node from outside the suite. Do that before touching a test.
+
+**Phase 1: raise the floor.** The backport list in Decision 2, one change per item, each with the descendant's copy deleted in the same change. One fix belongs here rather than in a mode: **reveal-or-die supplies no `makeSecret`, so its secret is 32 random bytes living only in local storage.** Bomber-world, which is the pre-port code, still derives it from a signature (`Commit:${chainId}:${contract}:${epoch}`, `lib/private/localState.ts`), so the port dropped a capability and `HANDOFF.md` still records reveal-or-die as having it. In a game whose stake is the avatar's life after three missed rounds, clearing site data mid-round costs the avatar. Restore it through the seam. **D9 settles what it derives from and what recovery actually means; read it before starting, because the twelve lines that restore the secret are not the piece of work.** Acceptance: reveal-or-die's diff against this template shrinks to its game and its brand, the count of inherited files it modifies stays at or below today's ten, and a round survives clearing local storage between commit and reveal - which, per D9, means the game supplies the action half of the recovery as well as the framework supplying the secret half.
+
+**Phase 2: identity.** N3's refactor on `main` (the alias, and the test that enforces it), then `with/nft-identity`, then re-point reveal-or-die's `stemBranch` at it.
+
+**This is also where reveal-or-die's open mint gets decided**, because it is the same subject: `Avatars.mint` has no access control, so an avatar can be minted for gas without going near the sale, and the avatar is what is AT STAKE. A stake that costs nothing to acquire is not a stake, which voids the framework invariant on any deployment that carries it. It is known and deliberately unresolved (there is a long comment on the function saying so, and `docs/plans/identity-without-consent.md` in that repo), because the fix is a decision about who may mint rather than a missing modifier, and D2 makes acquisition and what-is-at-stake precisely this branch's subject. Two things to correct while deciding: the composed impersonation the note describes is now largely closed, since the deposit payload lost its `controller` field and delegation decides who may act, so **the record overstates one half and could get the live half dismissed with it**; and the function's own comment still describes the old two-field payload. Adopt jolly-roger's `tooling` branch here, with `FEATURES=with/nft-identity`, since this is the phase that gives it something to compare (N6). Acceptance: hosted-account shape, and the branch README's shared-file edit list fits on one screen.
+
+**Phase 3: the epoch becomes a policy.** Formalise bomber-world's `_epoch()` prototype: timed, manual, timed-with-early-advance, plus the waited-for count, and drop `SKIP_COMMIT` rather than carrying it. Advancing is its own permissionless conditional call (C5). On the client, `EpochInfo` gains the hybrid, whose value is READ from chain with the clock as a local predictor rather than computed. Do this before any mode is built on it: the pure-arithmetic epoch appears character for character in five contracts and every client, and retrofitting after three ports is the expensive version. Acceptance: the reference game runs under all three policies, and the order-independence replay test passes under each.
+
+**Phase 4: worlds.** `createContext` takes its connection as a parameter in jolly-roger (small, already designed), then an embedded world in the reference game. Acceptance: the reference game plays a full round against a chain in the tab, and the chrome names the world it is describing rather than the one it assumed.
+
+**Phase 5: the long cycle.** `with/fuzd` here, proven on a 24-hour deployment of the reference game, including C3 and C4 under an early advance. This is the mode three of the five games need and the one with the least evidence in this lineage: catacombs' fuzd plumbing is fully written and never called.
+
+**Phase 6: the rest of the matrix**, in the order that shares the most: closed roster, lobby and forfeit, then hotseat, then NPCs. Hotseat's prerequisites are smaller than they looked (D4): turn order, nonce serialisation across the accounts one device is sending for, and provisioning at the lobby. Storage needs nothing, which was checked rather than assumed: the round keys by `${chainID}_${gameAddress}_${player}` and the operations ledger appends the account to its scope prefix, so several local players already do not collide.
+
+**Phase 7: the UI swap** (D8), on bomber-world once it is current. Not on the critical path for any mode, but it is the only test of a seam three repos already depend on, and its output is a number rather than an opinion.
+
+**Ongoing: conquest.** Its graft onto this template is the second bigint identity and the second renderer, and its move pipeline is unported either way, so doing it against the framework is cheaper than doing it twice. Its resolution rules are unwritten and `_acquireStarSystem`'s first-to-reveal branch is a defect to fix during the port, not a precedent.
+
+## Tripwires
+
+- **Two games change the same framework file differently: extract the framework to a package.** reveal-or-die changed one framework file in 126 commits, which is package-shaped rather than template-shaped. `@etherplay/delegation` is the precedent for how and why. Not yet; the signal will be unambiguous.
+- **A feature branch grows past about a dozen files: it wants a package boundary**, not a branch. This is R1 from the service-layers PRD, restated for the game tree.
+- **A backport is written twice instead of moved: stop and delete one.** The input layer is the worked example of what that costs.
+- **A dormant game stops compiling in a cascade: that is a finding, not a chore.** It is the cheapest evidence available that a seam does not fit.
+
+## Decisions taken 2026-09-07
+
+**D1. `template-commit-reveal` stays on `with/local-signer`.** There is no `with/all` yet and few `with/*` branches, so the question is not live. Two things to carry into it when it is.
+
+*The layer a game needs tracks its CYCLE LENGTH, not its genre or its identity model.* A fast game's window of interest is a few epochs, which is a bounded block range, so `eth_getLogs` answers it: reveal-or-die and bomber-world read `CommitmentRevealed` directly with a window sized from the epoch (`lib/world/state.ts`, and the `4 * epochDuration / averageBlockTime` heuristic), and that is what drives their animation. A 24-hour game's window is a day of blocks, which it does not answer, so it wants an indexer. Bomber-world is not merely uninterested in a 24-hour cycle, it would be a worse game on one, so this is a stable property of a game rather than a phase it passes through. That cuts across the game tree, which is the argument against pinning the layer choice at the template level at all.
+
+*Removal is a real alternative to a thinner template, and the mechanism already exists.* jolly-roger's `0d6c8f3` landed `.offshoot-omissions` (the paths a repo deliberately does not carry, WITH the reason for each), `scripts/apply-omissions.sh` to re-drop them in one command, and `web/test/offshoot-omissions.test.ts` to fail if one comes back. So "delete a folder plus a small extra" is already supported, and a layer built to R1/R6 shape (a folder, one wiring line, optional view fields) is exactly the shape that can be deleted that way. The honest trade to record: **the additive fan charges the MAINTAINER (one more node, verified forever), removal charges the ADOPTER (a modify/delete conflict every time the template touches a removed path).** The omissions mechanism does not remove that conflict, nothing can; it makes answering it one command instead of an excavation. Which side should pay is a judgement about how many adopters want a given layer, and it can be made per layer rather than once for the tree.
+
+**D2. `with/nft-identity` reuses the reference game rather than writing a second one**, and changes exactly three things: the identity type (an address becomes a token id), acquisition (mint and deposit instead of buying a bond), and what is at stake (custody of the token instead of an ERC20 bond). Those three are what the four token-identity games actually need and they are what `main` cannot demonstrate, so the branch earns its keep while staying inside the N1 to N6 budget. It does NOT add several tokens per account: that is D6, deferred but not precluded.
+
+What the branch deliberately does NOT prove, so nobody assumes it does: an identity that is degraded rather than seized (docking levels), and the third level conquest has, where an account owns an EMPIRE which controls AVATARS. Delegation already covers account-plus-controller; empire-over-avatar is a further level and conquest's port is where it gets proven.
+
+**D3. Bomber-world is not retired.** It descends from reveal-or-die and is the cheapest of the ports, so it re-syncs during Phase 1 rather than being written off. Budget one specific cost: its layout predates the convention (`onchain/evm/`, not `contracts/`), so the merge carries a rename as well as a diff.
+
+**D4. Hotseat is real commit-reveal, one ACCOUNT per player, with a revealer account.** Three shapes were considered: skipping the commit phase with a client-side freeze, real commit-reveal per player, and the device batching every player's move into one transaction. The last two leak nothing, and the deciding axis is not leakage but **code-path unity**: batching needs a contract entry point no other mode uses, and it caps the player count on a gas limit, so it makes hotseat a different game from the online one. Skipping commits is worse still, because "same code path" is then only superficial and it is paid for with a freeze that has four independent triggers (the poll interval, the epoch tick, RPC-health recovery, `resumeWhenGasArrives`). Real commit-reveal costs nothing extra in UX, because every other mode already has that UX.
+
+So the flow is: each player commits in turn on the shared device, NPCs commit whenever they like (a commitment cannot leak to a later committer, which makes NPC honesty structural rather than a matter of discipline), and once everyone has committed the reveals go in.
+
+**Each hotseat player is their own account**, not an identity under a shared one, because that is what mirrors an online game and it is what makes the same code path true rather than nearly true. Three things follow, and they are why this version is better rather than merely more faithful. Secrets are domain-separated by construction, since a different key produces a different signature, so the collision that a shared key would cause does not arise. The pending-operations ledger stays per player, whereas a shared account would have merged everyone's transactions into one visible list, which is itself a leak. And it is `worlds-and-identities.md`'s cheap case rather than a new concept: several connections against one context, since a world gets a context and an identity gets a connection.
+
+The cost is real and is accepted: more state churns at each handover (balances, operations, pending), and N accounts need gas. **The gas is the lobby's job**, exactly as in every other lobby-enabled mode, which is the general form of the point: a lobby exists to get everyone provisioned before the game starts, not only to fix the roster.
+
+**Revealing is a role, not a new seam.** Every contract here takes the identity as an argument and does not check the caller, deliberately, so "somebody else sends your reveal" is already the design and fuzd is one implementation of it. The local revealer is another, and it holds its own funded account, which is what pays for the reveals rather than charging them to whichever player happened to be last. Alongside it the device coordinates two small things: whose turn it is, and serialising sends so N rounds do not race on nonces.
+
+**Build it as a SCHEDULER adapter, handed the payload at commit time, not as a reader of anyone's storage.** That is what account-data encryption forces: once the round's secret sits inside an encrypted blob, only its owner can read it back, so anything that reveals on someone's behalf has to be given what it needs when the commitment is made. `commit()` already carries `secret`, `epoch` and `revealDueAt` for exactly that reason, so the local revealer and the fuzd one are the same shape including the handoff, and the encryption change confirms the seam rather than invalidating it.
+
+It also narrows what is left of the hotseat leak, which is the whole residual risk and worth naming: **the thing that must not show player 1's plan to player 2 is the collector's own contents.** One component with no timing triggers, rather than a view that four independent refresh paths could advance.
+
+**`SKIP_COMMIT` is dropped**, having lost its only consumer. See "The contract side is cheaper than it looks" for why nothing else wants it and what the bomber-world port does instead.
+
+**D5. Forfeit means "stop waiting for me", and nothing else. It never settles.**
+
+**Why the fixed set needs it and the open case does not** is mechanical rather than a matter of fairness. Under a clock, a player who stops acting accumulates missed rounds and dies by the game's existing rule; nobody is blocked meanwhile. With no clock, there are no turn advances, so **nothing accumulates and the death rule cannot fire at all**: the absent player's inaction freezes the very mechanism that would have removed them. Ejecting them by having everyone skip three turns on their behalf is the alternative, and it is absurd.
+
+**The definition is what keeps this cheap.** Forfeit removes the member from the set. It settles no stake, returns nothing, and burns nothing. Turns then advance again, the absent player's misses accumulate at the normal rate, and the game's existing rule kills the avatar three rounds later exactly as it would have under a clock, with the avatar still on the board and takeable in the meantime. **The same rule produces the same outcome in both modes**, so forfeit is mode-independent rather than a fixed-set special case, and there is no new economics to design.
+
+**Forfeit is final, and it is final for free.** A fixed set has no JOIN: the roster is closed when the lobby creates the instance, and nothing can add to it afterwards. So there is no re-entry to bar, no bar to store, and no forfeit-and-rejoin griefing to defend against; a forfeited member simply has no route back and can no longer act. That is also the counterweight to having no timer on the admin's power: a wrong ejection cannot be undone within the instance, and what makes that acceptable is social (a closed roster knows who its admin is) rather than mechanical.
+
+The reading to avoid, because it is the one that sounds equivalent and is not: "settle my stake and leave NOW". That is an instant costless exit, which is a way to not-reveal without losing anything, and it voids the invariant the whole template rests on. The three-round delay is not a grace period, it is what makes leaving cost something.
+
+Three things the definition still owes:
+
+- **A third party must be able to fire it, and it is the lobby's admin, bounded.** Self-forfeit is safe but does not cover the case that motivates the feature, a player who VANISHES and therefore presses nothing. The lobby has a creator (it fixes the roster and the config, so its address is already on the instance), and in a closed roster the players know each other, so a social trust assumption is available and is far cheaper than a mechanism. Keep it small with one condition: the admin may forfeit only a member who **has not acted in the current phase**, which is checkable on chain and means a player who has committed cannot be kicked. The power then reduces to declaring the obvious. No timer guards it beyond that: a delay would be a parameter to tune against a threat the roster does not have, since a closed set on a LAN knows who its admin is and what they did.
+- **The admin is a fast path, never the only path.** Unanimity of the remaining waited-for members stays as the fallback, or an admin who leaves or turns hostile freezes the instance forever. `address(0)` for the admin is then a meaningful configuration rather than a hole: no admin, unanimity only, which is what a same-device world wants since the device is the only party anyway.
+- **Removal applies from the current epoch forward, never retroactively**, or the outcome depends on when the removal landed relative to other reveals, which is the order-independence rule again.
+- **`commitWhenIdle` will fight it.** The client auto-commits empty rounds to keep a dying avatar alive, so it has to know about the forfeit, or the framework spends gas preventing the death the player just asked for.
+
+One thing this turned up that is worth knowing on its own. **Skip-turn already exists, is not free, and removes the natural exit.** It is `plan([])` plus a commit, and `commitWhenIdle` does it automatically, forever, while the player holds something that can die. So an idle player with the tab open never dies and quietly spends gas, and "just stop playing" really means "stop running the client". Exposing skip-turn as a button costs nothing and is worth doing; noticing that it makes death-by-silence unreachable is worth doing first. Where a game has a deliberate exit of its own (reveal-or-die's exit tile, in the contract first) that remains the better answer, because walking there is what prices it.
+
+**D6. Several identities per account is not built now, but the architecture must not preclude it.** Two rules, cheap to keep and expensive to retrofit. **Identity is a SELECTION, not a derivation**: even where there is exactly one, it arrives through an active-identity store and nothing reconstructs it from the account (`active-avatar.ts` is already that shape). And **everything keyed by "the player" is keyed by identity, never by account**, which the round's storage already does.
+
+The capability underneath both rules is **several rounds alive in one page**, and that is the same demand hotseat makes: N accounts holding one identity each, and one account holding N identities, are structurally identical from the round's point of view and differ only in whether the keys differ. So hotseat and multi-identity are one piece of framework work, and the nonce serialisation is shared plumbing rather than hotseat's tax.
+
+**D7. `makeSecret` takes the identity, and the derived message is domain-separated by it.** *(See D9 for what it derives FROM, and for why the enumeration this guards against is the same computation as the recovery Phase 1 wants.)* It is called with `{epoch}` today, and the derivation the games use is `Commit:<chainId>:<contract>:<epoch>`, which does not say which identity is committing. That is safe only while one key controls one identity. Where an account holds several (conquest's empires), all of them derive the same secret, and a small action space is enumerable against a known secret and a published hash, so the hiding property is gone from the inside. The message becomes `Commit:<chainId>:<contract>:<identity>:<epoch>`. Land it before anything on the new stack has a live deployment depending on the old message: it changes the derivation, so a round in flight across the upgrade cannot recompute its old secret, though it survives because the secret is stored as well.
+
+**D8. Bomber-world is the UI-swap test, and the test has a number for its answer.** The mechanism for owning the look without owning the behaviour already exists and cascaded here: `$ui` in `svelte.config.js`, `core/ui/button` as the paint shim, `core/ui/modal` as the behaviour shim that eleven components use instead of touching the dialog. See jolly-roger `work:work/notes/ideas/swapping-the-ui-kit-under-core.md` (done) and `work:work/notes/findings/the-navbar-is-the-next-composition-root.md` (spotted, four fixes proposed, none done).
+
+**What has never been tested is the paint.** Its two real consumers, bleeps and mandalas, retheme through about a hundred CSS custom properties and modified zero vendored shadcn files, and the idea note names that as the ceiling: colour resolves to variables, while shape, rhythm, elevation, motion and type are hardcoded Tailwind utilities inside each component (telling detail, `--radius` is themable and both left it at the inherited value). The `$ui` swap itself was verified against a throwaway kit. A 9-slice sprite kit with bitmap fonts (`~/Documents/Etherplay/Assets/Nil/Assets/UI`: box, button, inputbox, scrollbar, counters, four bitmap faces) is the first consumer that **cannot use the mechanism both existing consumers used**, which is what makes it a test of the seam rather than of a theme.
+
+Four things it should stress, stated as predictions so the test can falsify them:
+
+- **The contract's currency is Tailwind classes, and a sprite kit has no use for them.** `class` passes through as the styling channel and `size="icon"` means `h-9 px-4` rather than a different sprite. Expect the contract to need a channel that is not a class string.
+- **There are TWO UI paths and only one of them is this seam's business.** World-space UI is painted by pixi and belongs to the game world or sits on top of it (an arrow showing the avatar's path); app-space UI is DOM, Tailwind and CSS (modals, instructions, the HUD). The discriminator is whether it is in world coordinates and moves with the camera, and reveal-or-die already draws the line that way in practice: HUD, d-pad, tutorial, death notice and purchase modal are `.svelte` against the UI kit, while avatars, terrain and walk animation are pixi. Only the second path goes through `$ui`; the first is the render seam and is already parameterised. Worth stating in the template, because a game author who puts a path arrow in the DOM or a modal in pixi has made a mistake that is expensive to unwind later.
+- **The CSS path needs its images WARM, not gated.** This was written here as a load gate and that was wrong: sprites behind `url()` load on demand, so the risk is a modal opening onto unpainted boxes, which is a latency problem rather than a startup one. The template already has the mechanism, so this is configuration rather than invention: the service worker precaches `build` plus `files` when `OFFLINE_CACHE` is `all`, and Vite emits CSS-referenced images into `build`, so the chrome sprites are local from the second visit and the first open is instant even offline. What that does not cover is the first visit before the worker installs, where a `link rel=preload as=image` for the handful of chrome sprites closes the gap. Bitmap faces want the same treatment plus `font-display: block`, because a pixel font swapping in after paint is more jarring than a brief blank.
+- **Behaviour must survive the repaint.** The acid test is a sprite-painted modal that still passes escape, focus restore, portal layer and stacking, because a hand-rolled game modal loses exactly those first.
+- **The navbar is where it will actually hurt.** Every descendant rewrites it, it conflicted in both bleeps and mandalas with no automatic resolution, and the sending-pulse guarantee is promised in `ui/in-flight/sending.ts`, kept in `navbar.svelte` and tested only in a suite that every game deletes. A game with an immersive UI is the most likely repo to drop it silently.
+
+**A hole found while checking that the seam had reached here.** `web/src/lib/core/ui/confirm/ConfirmationModal.svelte` does not exist in jolly-roger: it is this repo's own addition to `core/`, which HANDOFF decision 6 says stays jolly-roger's and mergeable, and it imports `$lib/shadcn/ui/button` directly. It is the only such import left in `core/` in this tree, jolly-roger's `core/` has none, and it is a modal. Nothing catches it, because `$app/*` has `framework-boundary.test.ts` while the UI-kit boundary has prose. Fix both halves: move or upstream the file, and add the boundary test in the shape of the existing ones.
+
+**Where each piece lives**, by Decision 2's test: the mechanism (contract narrowing, `$ui`, the `AppShell` chrome handles, the extracted account-cluster marks) is everyone's and goes upstream; the sprite kit is bomber-world's brand and stays there. The template must not depend on those assets.
+
+**Acceptance is a measurement, because "revamp the UI" is otherwise unbounded**: zero modified files under `web/src/lib/core/` and zero edited vendored shadcn files in bomber-world; the modal behaviour suites green with the sprite kit installed; and a cascade run afterwards with its conflict events counted against the `with/hosted-account` shape (3 events in 24 merges). That number is the real deliverable: what a full UI revamp costs per cascade, measured instead of feared.
+
+**It depends on D3.** Bomber-world cannot be the test until it is current, so the re-sync comes first, and this is the second thing that re-sync buys.
+
+**D9. The derived secret comes from the SIGNER, and recovering the round is two halves on opposite sides of the seam.** Decided 2026-09-07 while scoping Phase 1, because the first version of that item read as if restoring `makeSecret` were the whole job. It is not, and the part that is missing is the part that costs the stake.
+
+**It derives from the local signer, and that is safe because the signer is itself deterministic.** Sign-in derives it from a signature over an origin-scoped message the wallet produces locally (jolly-roger `core/connection/remote.ts`, and `mode.ts` for why `TARGET_STEP` is the only line that decides whether a signer exists at all), so the same account signing in again derives the same key, on any device. That is what makes signing with the SIGNER as recoverable as signing with the account while costing no prompt, which is the whole reason not to reach for the account: a wallet prompt per commit is the thing the local signer exists to remove.
+
+Name the assumption underneath it, because it is silent when it fails: **this rests on the wallet's signature being deterministic.** secp256k1 with RFC 6979 is, and that is what wallets do, but a wallet that randomises its nonce, or a contract account signing through ERC-1271, derives a different signer on the second device and therefore a different secret. There is no error in that case. The symptom is a reveal that cannot be produced and a stake that is gone, which is the most expensive possible way to find out, so a game shipping on this should check the signer address it derived rather than assume it.
+
+**Recovering the ACTIONS is the GAME's, and it may legitimately be a brute force.** The chain holds a hash, so in general the actions are not recoverable at all; but where a game's action space is small enough to enumerate, holding the secret makes the commitment openable by search. reveal-or-die is exactly that case (three steps over four directions, plus an exit). So the seam splits the way everything else here does: **the framework recomputes the SECRET, because `makeSecret` is deterministic; the game recovers the ACTIONS, because only it knows whether its space can be enumerated and how.** Where it cannot, "recoverable" honestly means "a device that still has the plan", and the framework must say so rather than implying more.
+
+**The sharp corollary, and it is the reason to write this down rather than leave it as an implementation note: recovery-by-enumeration and D7's leak are the SAME computation.** Enumerating a small action space against a known secret and a published hash is exactly what makes the hiding property vanish when two identities share a secret, and it is exactly what lets a player reopen their own commitment after clearing storage. What separates the two is only who holds the secret. That is D7's argument for domain separation arrived at from the other end, and it is a stronger form of it: the moment an account's identities share a secret, one player can run another's recovery, using code the game shipped on purpose.
+
+**Migration is not a constraint.** Nothing on this stack has a live deployment with users, so the derivation may change freely and no design effort goes on carrying an in-flight round across the change. D7 hedged on this ("land it before anything has a live deployment depending on the old message"); the hedge is spent, and the window is now rather than conditional.
+
+## What is deferred, and by whose decision
+
+Nothing in the design above is waiting on an answer. What is outstanding is deferred on purpose, and each item names the event that reopens it.
+
+- **Whether this template ever stems from `with/all`** (D1). Reopens when a second game wants the same service layer, which is also the trigger for earning a combination branch at all.
+- **Several identities per account** (D6). Reopens with conquest's port, which is the only consumer; the two architectural rules are kept meanwhile so it stays cheap.
+- **Stratagems and catacombs beyond compiling** (Decision 1). Reopens if a cascade breaks their build, which is the point of having them in the tree.
+- **What a game's deliberate exit costs**, where the game has one (D5). reveal-or-die's exit tile answers it for reveal-or-die; conquest's and catacombs' are theirs to design.
