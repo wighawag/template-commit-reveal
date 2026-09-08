@@ -95,7 +95,7 @@ Re-measured from scratch first, on `template-commit-reveal@b1623449` and `reveal
 | `web:check` | 0 errors, 0 warnings | 0 errors, 0 warnings |
 | `test:unit` server | 1407 in 115 -> **1453 in 120** | 1608 in 129 -> **1622 in 131** |
 | `test:unit` client | 65 in 10, unchanged | 65 in 10, unchanged |
-| `test:e2e`, `CI=1` | 50 -> **51 passed**, no retries | 49 passed -> 49 passed |
+| `test:e2e`, `CI=1` | 50 -> **51 passed**, no retries | 49 -> 49 passed, no retries either side |
 | `contracts lint` | 33, unchanged | 67, unchanged |
 | `format:check` | green | web green; the same 7 contracts files |
 
@@ -105,7 +105,11 @@ Re-measured from scratch first, on `template-commit-reveal@b1623449` and `reveal
 
 **The e2e count moving 50 -> 51 is one new test and not a renumbering.** It commits, deletes the round's own record, reloads, is told the chain holds a commitment, re-enters the turn and watches the recovered round reveal itself. It is the only thing in the tree that can prove the hash the client builds a candidate into is the hash the CONTRACT stored, because a disagreement surfaces as the adopted round's reveal reverting.
 
-**The template ran 51 of 51 with no retries at load average 5.4**, and the run before it - the same tree bar the e2e fix - went 49 passed, 1 flaky, 1 failed at load 12 to 14, the flaky one being `out-of-gas` in the family this document already names. The failure was the new test asking for 22 seconds of a play phase that is 19.9 seconds long, which is worth recording as the shape of a REAL failure hiding under a load flake: it failed all three attempts and named the same wait every time, which is what a flake does not do.
+**The template ran 51 of 51 with no retries at load average 5.4**, and the run before it - the same tree bar the e2e fix - went 49 passed, 1 flaky, 1 failed at load 12 to 14, the flaky one being `out-of-gas` in the family this document already names. The failure was the new test asking for 22 seconds of a play phase that is 19.9 seconds long, and it is worth recording as **the shape of a REAL failure sitting next to a load flake in the same run**: it failed all three attempts and named the same wait every time, which is exactly what the flake does not do. The rule the load note already states held - a single red run is not evidence either way - and the thing that separated the two was not re-running, it was reading which assertion failed.
+
+**reveal-or-die was measured on BOTH sides at 49 with no retries**, which took a second full run against the pre-merge commit rather than trusting the number written here. Worth the twenty minutes: that number is the one this document has had to correct twice, and a suite that stops being collected looks exactly like a clean run.
+
+**The play phase's ceiling is worth writing down because it is not obvious and it is now load-bearing for a test.** It is `commitPhaseDuration - commitTimeAllowance`, and `commitTimeAllowance` is `revealPhaseDuration + 0.1`, so on the localhost deployment the window in which a player may plan is 19.9 seconds of a 40 second epoch, not 30.
 
 Two of those correct `HANDOFF.md` rather than merely updating it. Its unit figure (744 in 66 files) and its e2e figure (21) are roughly half of what is actually collected now, and its standing instruction to leave `web/playwright.config.ts` and `web/src/lib/core/metadata/Head.svelte` unformatted is spent: upstream has since reformatted both, `format:check` is green here, and following the instruction now would be the divergence it was written to prevent.
 
