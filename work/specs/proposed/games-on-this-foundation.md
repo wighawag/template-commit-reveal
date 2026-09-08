@@ -96,6 +96,22 @@ Re-measured from scratch first, on `template-commit-reveal@b1623449` and `reveal
 | `test:unit` server | 1407 in 115 -> **1453 in 120** | 1608 in 129 -> **1622 in 131** |
 | `test:unit` client | 65 in 10, unchanged | 65 in 10, unchanged |
 | `test:e2e`, `CI=1` | 50 -> **51 passed**, no retries | 49 -> 49 passed, no retries either side |
+
+And after reveal-or-die's enumerating recovery, which followed in the same session:
+
+| suite | template-commit-reveal | reveal-or-die |
+|---|---|---|
+| `contracts:test` | 17, unchanged | 9, unchanged |
+| `web:check` | 0 errors, 0 warnings | 0 errors, 0 warnings |
+| `test:unit` server | 1453 in 120 -> **1454 in 120** | 1622 in 131 -> **1656 in 133** |
+| `test:unit` client | 65 in 10, unchanged | 65 in 10, unchanged |
+| `test:e2e`, `CI=1` | 51 passed | 49 -> **50 passed**, no retries |
+| `contracts lint` | 33, unchanged | 67, unchanged |
+| `format:check` | green | web green; the same 7 contracts files |
+
+**+1 upstream and +34 there** is the shape a move should have when the framework part already exists: the recovery store's nine tests were already upstream and simply changed file, the one that is new guards the nonce checker against reading a single claim, and the thirty-four are the search, its wiring and the HUD rule that must not ask a player a question the app is about to answer.
+
+**The red run in between is worth keeping, because it is the load note's own case and it nearly fooled me.** reveal-or-die's first full run with the recovery suite went 47 passed, 2 flaky, 1 failed at load average 20 to 28, taking 31 minutes; the new test failed all three attempts. The same test then passed alone at load 14, and the full suite went **50 of 50 with no retries at load 12, in 15 minutes**. So the evidence is consistent with the documented finding - the variable is load, the failures are waits rather than wrong answers - and it is NOT proof: three reds in a row is exactly what a real defect looks like, and the only thing that separated them was running it again somewhere quieter. Do not read a single run of this suite, in either direction.
 | `contracts lint` | 33, unchanged | 67, unchanged |
 | `format:check` | green | web green; the same 7 contracts files |
 
@@ -557,11 +573,37 @@ Two things it deliberately does NOT do:
 
 **One claim to verify rather than trust when it is built:** the canvas2d host is REPORTED to work, from having been swapped in at some point. Nothing imports it, no test covers it, and it has drifted through every render change since. Verify it by porting the reference game onto it, which is the work anyway.
 
+**reveal-or-die's enumerating recovery is DONE, 2026-09-08**, which closes the item opened below it and corrects two things this document said.
+
+**The action space is four orders of magnitude bigger than D9 and D10 claim, and the claim is now a measurement.** Both say "about 125 candidates (three steps over four directions, plus an exit)". Every deployment of that game carries `numMoves: 10`, which the rule alone would make a million walks. What saves it is the MAZE rather than the move limit: the degree histogram over a 33x33 window is 104 cells with one way out, 292 with two, 100 with three and 52 with four, so a ten-move turn from a floor cell is **3,000 to 16,000 candidates**, at about **85 microseconds a hash** - a few tenths of a second, up to a little over one. The estimate was not merely stale, it was derived from a move limit the game has never shipped with.
+
+**So enumeration needs a budget, and the budget is the game's** - which is the one part of D10's three prohibitions that this item was always going to test. Those numbers are that map's, and the rule permits an open chamber where they are a million and ninety seconds. The search caps at 60,000 candidates, yields to the browser as it goes, and degrades to the route the reference game uses for everything. Giving up is not a failure: it establishes that this is not the cheap case.
+
+**SHORTEST FIRST is what makes it fast rather than merely possible**, and it falls out of something already in the plan. The EMPTY turn is tried first because `commitWhenIdle` commits one every epoch to keep an idle avatar alive, so it is much the commonest single candidate; short walks follow. A player who took one step is recovered in a handful of hashes, and the thousands are only enumerated when the answer is not there at all.
+
+**AN ENTRY IS NOT SEARCHABLE, and that is a property rather than a gap.** An avatar out of the world enters at any non-obstacle cell on an unbounded map. So the game supports both of D10's routes rather than replacing one with the other, and the HUD says something different for that case, because telling a player to "re-enter the same moves" describes moves they never made.
+
+**The search is an ORACLE, not an authority.** It hands what it finds back through the framework's `offer`, so the single place that checks a candidate against the chain's hash is still the only place that adopts and a bug in the search cannot put a wrong turn into a round. Pinned by mutation.
+
+**D10's "the framework gains exactly ONE method" did not survive the second consumer, and the rest of it did.** The offer-and-check store is identical in both games down to the two silent failures, so it is `game/core/recovery.ts` now. Every one of D10's three prohibitions still holds - no chain reader, no modal, no enumeration budget - which is the test it passes rather than an exception to it. The reference game's own part is now wiring, which is the honest outcome for a game with nothing to enumerate.
+
+**The e2e asserts a NEGATIVE, which is the whole feature**: after the round's record is destroyed and the page reloaded, nothing touches the page - no click, no key, no button - and the round comes back and reveals itself.
+
+## The nonce guard was blind, and two suites were racing behind it
+
+**`web/test/e2e-account-claims.test.ts` read one `walletAccountIndex` per FILE**, because it used `match` rather than `matchAll`. Every claim after the first in a file was invisible to the check that exists to stop two e2e suites sending from one burner account, and the file most likely to hold several is exactly the one where it matters: suites that need their own account are the ones that send transactions.
+
+Two real collisions were behind it, and only one is this session's. **`game.e2e.ts`'s missed-reveal suite has been on account 1, the CONTRACTS suite's, since it was written** - its own comment says "the contracts suite uses index 1" and then takes it. Both suites now have accounts of their own, which needed two more entries in `impersonate-addresses.json`.
+
+**Not claimed as the cause of the parallel flake, and worth being careful about.** Two suites sending from one account race for a nonce, and a lost transaction is the family of symptom the flake note describes, so this is a plausible contributor that is now removed. But that note's own measurement says LOAD, not worker count, and nothing here was measured against it. It is a hypothesis with a mechanism, not a fix.
+
+**The cascade caught a bad test one merge after it was written**, which is the cheapest possible demonstration of why the descendants are in the tree. The fix's own self-check asserted that some suite file claims more than one account - true of the template, whose game suite holds three, and false of reveal-or-die, where the parent's suites are deleted and each file holds one describe. It failed on the first merge down and was fixed upstream so the descendant inherits something true, rather than patched locally.
+
 ## Opened by Phase 1's last item, and deliberately not done
 
 Two pieces of work fall out of D10 rather than being left over from it. Both are named here so nobody re-derives them, and neither is Phase 2's.
 
-**reveal-or-die's recovery, which is the ENUMERATING one.** The framework half is inherited there already (`round.adopt`), and D9 measured the action space at about 125 candidates - three steps over four directions plus an exit - so it is the case D10's second route exists for, and it is the only place in the tree that can prove enumeration is worth having at all. What it needs is the chain read extended the way the reference game's was (the live commitment is already published upstream by the same read), an enumerator, and no UI at all if the enumeration succeeds, which is the interesting part: the reference game had to ask the player and this one need not. It was NOT done here because a backport is a move and this is a build, and because the reference game already satisfies the acceptance.
+**~~reveal-or-die's recovery, which is the ENUMERATING one.~~ DONE, 2026-09-08.** See the write-up above: it needed a budget, it corrected D9's estimate by four orders of magnitude, and it does what was predicted of it - the player is asked nothing, because the app works the turn out for itself.
 
 **A cross-repo shared-divergence check.** N6 adopts jolly-roger's `tooling` branch to run `check-shared-divergence.sh` between a base and its feature branches, in ONE repo. Both instances of the failure it is for have now happened ACROSS a repo boundary instead - the input recognisers, and the two refresh helpers found this session - where nothing looks. The trigger for building it has fired twice; what it needs is a mode that diffs a descendant against its stem, which is a smaller thing than the branch machinery it would live beside.
 
