@@ -34,7 +34,11 @@ Today a browser that has lost its local round is told nothing and loses the stak
 
 ## Acceptance
 
-- A round committed in one browser is recoverable in a fresh context with empty local storage, in the same epoch, and reveals. This is Phase 1's stated criterion, which the derived secret alone does NOT meet: reveal-or-die's missed-reveal e2e currently still misses, and that is the test that should change behaviour.
+- A round committed in one browser is recoverable after that browser loses its local round, in the same epoch, and reveals. This is Phase 1's stated criterion, which the derived secret alone does NOT meet.
+
+  **The test that should change behaviour is the TEMPLATE's**, `web/e2e/tests/game.e2e.ts`, in the `A missed reveal` suite. This task originally named reveal-or-die's missed-reveal e2e; that suite was deleted in reveal-or-die's `5b1e9ed` along with the rest of the parent's game, because it plans on a CELL and bonds a per-cell stake, neither of which that game has. The equivalent lives only upstream now, which is where this work lands anyway.
+
+  **It is a wipe-and-reload, NOT a second browser context**, and the distinction is written at the test and is easy to get wrong when reading this: the burner wallet generates its accounts per browser and signing in derives the signer from those, so a clean context is a DIFFERENT PLAYER and would prove nothing about recovery. What is destroyed is the round's own record in local storage.
 - The reveal window is respected: nothing spends gas on a reveal that cannot land.
 - Nothing settles a forfeit on the player's behalf. `acknowledgeMissedReveal` stays a deliberate press, per the standing rule that the framework may spend gas to protect a stake and may never spend the stake.
 - `RoundState` has the same members it has today.
