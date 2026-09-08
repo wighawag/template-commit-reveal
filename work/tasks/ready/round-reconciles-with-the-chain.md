@@ -7,6 +7,15 @@ blockedBy: []
 
 # The round reconciles with the chain
 
+> **BUILT, 2026-09-08.** `round.adopt` and the handover are `4fa09411` and
+> `9d908c9c`; the reference game's half is `387a5d38`; the e2e budget fix is
+> `b37d20bb`. Merged into reveal-or-die at `c2d0544`, which inherits the
+> framework half and does NOT build its own recovery - that game can ENUMERATE
+> its action space, which is the interesting half and its own task. The
+> write-up is in the spec, under "D10 and the board handover are DONE".
+> Left in `ready/` rather than moved on: this session was authorised for one
+> position change, the promotion. The next person may move it to a terminal.
+
 Today a browser that has lost its local round is told nothing and loses the stake in silence. The chain holds the commitment; the client already fetches it; the client throws the fact away.
 
 **Decided in D10 of the spec.** Read that first: it is what makes this small, and it is where the reasoning lives. This task is the build, not the design.
