@@ -109,12 +109,16 @@ jolly-roger@main
    │
    └─ template-commit-reveal@main              framework + address-keyed reference game
       │                                        (stratagems' identity shape)
-      ├─ stratagems                            dormant, compile-only member
-      └─ with/nft-identity                     identity is a token; acquisition proven
+      ├─ stratagems                            dormant, compile-only member (twgl)
+      ├─ with/pixi-js                          pixi + assetpack + one sprite (D11)
+      ├─ with/nft-identity                     identity is a token; acquisition proven
+      └─ with/all                              the single integration branch (D11)
          ├─ reveal-or-die  ──▶ bomber-world    dormant, compile-only member
          ├─ catacombs                          dormant, compile-only member
          └─ conquest-v1                        moves off jolly-roger onto here
 ```
+
+**The renderer axis and `with/all` are D11**, taken after this decision and after Decision 2's asset-pipeline row was scoped. `main` carries the render seam and the host that needs no install; `pixi.js` is 79M and earns a node, with the art pipeline on it because assetpack emits a pixi manifest and means nothing away from it. Every real game therefore stems from `with/all` rather than from `with/nft-identity` alone. catacombs is listed under it for identity, not for pixi: it is twgl and supplies its own host, as stratagems does.
 
 **Why `with/nft-identity` and not a second template repo.** Four of the five games identify a player by a token (`avatarID`, `characterID`, `empireID` over an owned avatar); one identifies by address. Decision 3 in `HANDOFF.md` deliberately makes the reference game address-keyed so that `PlayerIdentity` is exercised as a type parameter rather than assumed. That decision is right and stays. But it leaves identity ACQUISITION (mint, buy, deposit, choose which one you are playing) with no user in the template, and unproven code in a template is the thing everyone regrets. A branch where the reference game becomes token-keyed gives acquisition a user without giving up the address case.
 
@@ -146,7 +150,7 @@ Do not read that as the duplication having been harmless. **It was caught while 
 |---|---|---|
 | ~~input recognisers~~ | ~~`lib/input/*`~~ | **DONE, Phase 0.** Nothing to reconcile upstream (the copies were identical bar their comments), so the move was the deletion: `lib/input/` and its tests are gone from reveal-or-die and `lib/world/controls.ts` imports the inherited `game/render/*` |
 | ~~the acquisition rail~~ | ~~`lib/world/purchase.ts` (858), `pending-purchase.ts`, `PurchaseModal`~~ | **DONE, Phase 1.** `game/acquire/` upstream, with the descendant's three files and their two test files deleted in the same change. The reference game buys its ERC20 stake through it, which needed a contract (`StakeSale`) to make the stake one transaction at all. See "The acquisition rail" below for what the generalisation decided and what it cost |
-| asset pipeline and load gate | `vite.assetpack.ts`, `world/render/assets.ts`, `LoadingSprite`, `ui/loading/*` | every game has assets; a template whose example has none never proves the pipeline |
+| asset pipeline and load gate | `vite.assetpack.ts`, `world/render/assets.ts`, `LoadingSprite`, `ui/loading/*` | **Re-homed by D11, and no longer a Phase 1 move to `main`.** The pipeline goes to `with/pixi-js` in Phase 2, because it emits a pixi manifest and `pixi.js` is a 79M install that `main` should not carry. It has already been written twice (reveal-or-die 139 lines, conquest 117, same two workarounds), which is what earns the node. The renderer-agnostic half, the load gate that turns a progress store into a splash, follows it there rather than shipping to `main` with nothing to load |
 | epoch countdown UI | `world/ui/GameClock.svelte` | the epoch is framework, so its display is too |
 | ~~liveness~~ | ~~`game/core/round.ts`'s `commitWhenIdle`~~ | **DONE, Phase 1.** Moved up with all seven of its tests; reveal-or-die's `round.ts` is now byte-identical to this one |
 | board handover | `world/hold.ts` (218), `display-plan.ts`, `reveal-outcome.ts` | these are the client half of "the round never reconciles with the chain", item 1 of the known-not-to-fit list. They are framework gaps that reveal-or-die filled locally |
@@ -294,7 +298,7 @@ Two things noticed while doing it, neither acted on.
 - **The rail assumes the delegation registry is the contract called `Game`.** It reads `deployments.contracts.Game.address` in three places (deciding the signature route, fetching the credential, and submitting the registration), which is true in this lineage and is an assumption rather than a seam. It was true of the descendant's copy too, so nothing regressed; it becomes a question the first time a game's delegation record lives somewhere other than its game contract. Phase 2 is where identity is being reshaped and is the cheapest place to notice it.
 - **`AcquireModal.svelte` imports `$lib/shadcn` directly, and that is NOT the D8 hole**, which was checked rather than assumed so nobody has to check it again. D8's hole is specifically `core/ui/confirm/ConfirmationModal.svelte`, because `core/` is jolly-roger's and its copy has no such import anywhere. `lib/game/` is this repo's own layer, where importing the kit is the normal thing every component does. The boundary D8 wants a test for is `core/`, and this file is outside it.
 
-**Phase 2: identity.** N3's refactor on `main` (the alias, and the test that enforces it), then `with/nft-identity`, then re-point reveal-or-die's `stemBranch` at it.
+**Phase 2: identity, and the branch tree (D11).** Build the fan once rather than twice: N3's refactor on `main` (the alias, and the test that enforces it), then `with/pixi-js` (which is also where the reference game's port onto the immediate renderer lands, and where the asset pipeline is deduplicated out of reveal-or-die and conquest), then `with/nft-identity`, then `with/all`, then re-point reveal-or-die's `stemBranch` at `with/all` rather than at `with/nft-identity`.
 
 **This is also where reveal-or-die's open mint gets decided**, because it is the same subject: `Avatars.mint` has no access control, so an avatar can be minted for gas without going near the sale, and the avatar is what is AT STAKE. A stake that costs nothing to acquire is not a stake, which voids the framework invariant on any deployment that carries it. It is known and deliberately unresolved (there is a long comment on the function saying so, and `docs/plans/identity-without-consent.md` in that repo), because the fix is a decision about who may mint rather than a missing modifier, and D2 makes acquisition and what-is-at-stake precisely this branch's subject. Two things to correct while deciding: the composed impersonation the note describes is now largely closed, since the deposit payload lost its `controller` field and delegation decides who may act, so **the record overstates one half and could get the live half dismissed with it**; and the function's own comment still describes the old two-field payload. Adopt jolly-roger's `tooling` branch here, with `FEATURES=with/nft-identity`, since this is the phase that gives it something to compare (N6). Acceptance: hosted-account shape, and the branch README's shared-file edit list fits on one screen.
 
@@ -432,11 +436,60 @@ The check is `adapter.buildCommitment({actions, secret})` against the chain's ha
 
 **Do not pre-build the 24h answer here.** For a genuinely long round the real defence is the SCHEDULER: `commit()` already hands `secret`, `epoch` and `revealDueAt` to whatever will reveal, so a fuzd-backed game survives a wiped browser completely because the payload left the device at commit time. Reconciliation is the BACKSTOP for when there is no scheduler, and Phase 5 is where the scheduler lands.
 
+**D11. The RENDERER becomes a branch axis: `main` carries no rendering library at all, and pixi earns a node with the art pipeline on it.** Decided 2026-09-07, while scoping the asset-pipeline row of Decision 2. It changes Decision 1's tree, Decision 3's target and Phase 2's order, which is why it is a decision rather than an item.
+
+```
+template-commit-reveal@main          seam + immediate/canvas2d host, no render library
+├─ stratagems                        (twgl, supplies its own third host)
+├─ with/pixi-js                      pixi + assetpack + one sprite
+├─ with/nft-identity                 identity is a token; acquisition proven
+└─ with/all                          the single integration branch
+   ├─ reveal-or-die ──▶ bomber-world
+   ├─ catacombs
+   └─ conquest-v1
+```
+
+**The deciding number is 79M.** That is `pixi.js` installed, and D1's rule for when a branch is worth its merge tax is install and CI rather than bundle size: *"a capability that is only code costs them nothing that a dynamic import does not already solve."* The canvas is already dynamically imported, so bundle size was solved long ago; the install was not, and it is the largest single cost in the tree. `@assetpack/core` alone is 1.1M and does NOT clear that bar, which is why it is not its own branch.
+
+**assetpack has no meaning away from pixi, so they are one node rather than two.** Both existing copies use `pixiPipes` and emit a pixi spritesheet manifest, which a twgl renderer cannot read without somebody writing a second reader. A `with/assets` branch would also have to chain with `with/nft-identity` for every real consumer, coupling an ART PIPELINE to an IDENTITY branch - orthogonal axes, and exactly the lattice Decision 4 exists to prevent.
+
+**It also fixes an unexercised region that is larger than the two already recorded.** `placement/render/index.ts` selects pixi and carries canvas2d as a commented-out alternative at the bottom, so today:
+
+| | lines | consumer today | consumer after |
+|---|---|---|---|
+| `canvas2d/` + `draw.ts` + `board-immediate.ts` + `immediate.ts` | 405 | **none** | `main` |
+| `stateful.ts` + `reconcile.ts` (pixi-free) | 370 | `main` | `with/pixi-js` |
+| `pixi/` + `board-renderer.ts` + `CellObject.ts` | 396 | `main` | `with/pixi-js` |
+
+Read that carefully, because the tempting summary is wrong. It is NOT "both renderers become exercised on main". It is that **every line becomes exercised on some node**, where today 405 of them are exercised on no node at all - four times `keys.ts`/`gamepad.ts` and `commitWhenIdle` put together, and never counted alongside them because nobody had looked.
+
+**`stateful.ts` and `reconcile.ts` STAY on `main` and are exercised one node down. That is correct and must not be "fixed".** They import no pixi and they are the diffing logic every scene-graph host shares, so `main` is where a second one (three.js, or the twgl games) would find them; `reconcile.ts` also still has an open backport against it (`values()`, from reveal-or-die's list). Shared machinery exercised by a feature branch rather than by the base is the normal shape of a fan, not a smell.
+
+**Why this was not obvious, and the correction worth recording:** the asset pipeline was scoped as a Phase 1 backport to `main`, on the reading that a template whose example has no art never proves the pipeline. That reading is right and its conclusion was wrong, because it was made without pricing the install or noticing that the row's real prerequisite is pixi. The first version of the analysis also said `@assetpack/core` "drags a build step" and therefore earned a branch; it does not, because **both existing copies already self-disable** with `existsSync(ASSETS_FOLDER)` and write an empty manifest when there is no art. Two authors designed for the no-art case independently.
+
+**What earns the node is that the pipeline has already been written twice.** `reveal-or-die/web/vite.assetpack.ts` is 139 lines and `conquest-v1/web/vite-assetpack.ts` is 117, independently authored, both reaching the same two workarounds: the `/assets/` prefix rewrite for `pixijs/assetpack#148`, and an empty manifest so a fresh clone type-checks against a gitignored file. That is the tripwire firing across a repo boundary, and Decision 1's own trigger for earning a node ("if a second game wants the same combination") was already met before this was scoped.
+
+Four things it costs, none of them hidden:
+
+- **Four verification nodes instead of one**, each running `verify` forever, on gating that Phase 0 only just installed.
+- **`with/all` is a real commitment**, and it is this repo adopting the service-layers PRD's shape (a flat fan plus exactly one integration branch) a level down from jolly-roger. The reason to believe it is that it is measured there, which is also where Decision 3's acceptance numbers come from.
+- **Phase 2 changes shape.** reveal-or-die needs pixi AND a token identity, so its `stemBranch` points at `with/all`, not at `with/nft-identity` as Decision 1 currently says. Same for conquest when it joins.
+- **`main`'s reference game must be ported to the immediate renderer.** Real work, and the valuable kind: it is the only thing that will ever prove that seam.
+
+Two things it deliberately does NOT do:
+
+- **It does not serve stratagems or catacombs.** Both are twgl.js. `main` is "the seam plus the host that needs no install", not "the renderer everyone uses", and those two supply their own third host exactly as HANDOFF decision 5 always intended. So `with/pixi-js` is not "the games branch"; it is one host of three.
+- **It does not reopen whether the renderer is a seam.** It stays a seam (decision 5). What moves to a branch is the LIBRARY and its build, not the choice.
+
+**Sequencing: build it in Phase 2, not before, and do not land the asset pipeline on `main` first.** Creating `with/pixi-js` now and `with/nft-identity` later is two branch-creation exercises and a `with/all` that changes shape halfway through; landing assetpack on `main` now means adding a devDependency, a source-art folder and a sprite and then moving all three onto a branch, which is writing it twice in slow motion. Phase 1 continues meanwhile on the items that are renderer-agnostic either way: the epoch countdown and the board handover are DOM and plain stores.
+
+**One claim to verify rather than trust when it is built:** the canvas2d host is REPORTED to work, from having been swapped in at some point. Nothing imports it, no test covers it, and it has drifted through every render change since. Verify it by porting the reference game onto it, which is the work anyway.
+
 ## What is deferred, and by whose decision
 
 Nothing in the design above is waiting on an answer. What is outstanding is deferred on purpose, and each item names the event that reopens it.
 
-- **Whether this template ever stems from `with/all`** (D1). Reopens when a second game wants the same service layer, which is also the trigger for earning a combination branch at all.
+- **Whether this template ever stems from jolly-roger's `with/all`** (D1). Reopens when a second game wants the same service layer, which is also the trigger for earning a combination branch at all. Note this is a different question from D11's `with/all`, which is THIS repo's own integration branch over its own two axes; the two are one level apart and neither implies the other.
 - **Several identities per account** (D6). Reopens with conquest's port, which is the only consumer; the two architectural rules are kept meanwhile so it stays cheap.
 - **Stratagems and catacombs beyond compiling** (Decision 1). Reopens if a cascade breaks their build, which is the point of having them in the tree.
 - **What a game's deliberate exit costs**, where the game has one (D5). reveal-or-die's exit tile answers it for reveal-or-die; conquest's and catacombs' are theirs to design.
