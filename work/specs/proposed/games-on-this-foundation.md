@@ -345,6 +345,8 @@ One honest cost recorded rather than glossed: the template's own game does NOT s
 
 **The third was not a third**, and it is worth saying so here rather than only under the item: the acquisition rail ships with the reference game buying its ERC20 stake through it on `main`, which cost a contract nobody had planned for (`StakeSale`) and was worth it. The count stands at two, deliberately.
 
+**N3 produced a candidate for the third, and it is recorded rather than counted**: `Game.activeIdentity` is exposed on the `Game` surface and no UI on `main` reads it, while reveal-or-die has three readers. It is materially weaker than the other two - the STORE is threaded through ten sites and exercised by the unit suite and the e2e round, and it is only the exposure on `Game` that has no consumer - so it is not being called a third here. See `work/notes/observations/upstream-members-with-no-consumer.md` for the argument and for the two things that would settle it, both of which belong to `with/nft-identity` rather than to N3.
+
 **The secret half is DONE, 2026-09-07** (`e7599b35` here, merged into reveal-or-die at `b0f6cb6`). `game/core/secret.ts` derives it, `makeSecret` is handed the identity as D7 requires, and both games use it - the template's own, which gives the derivation a consumer upstream rather than an untested helper, and reveal-or-die's, where the identity is the avatar. Signing is injected and the template signs with the local signer off the signer executor, whose `account` is already a viem local account: no wallet prompt, no key in the game, and **no new member on `CoreServices`**, which was worth finding because the composition root is the most conflicted file in the tree.
 
 Three things it turned up, all worth carrying:
