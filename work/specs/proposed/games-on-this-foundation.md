@@ -137,7 +137,7 @@ And after D11's renderer axis - the reference game's port onto the immediate hos
 | `web:check` | 0 errors, 0 warnings | 0 errors, 0 warnings |
 | `test:unit` server | 1460 in 121 -> **1471 in 123** on `main`, **1477 in 124** on `with/pixi-js` | 1662 in 134, unchanged |
 | `test:unit` client | 65 in 10 -> **71 in 11** | 65 in 10, unchanged |
-| `test:e2e`, `CI=1` | 51 passed before and after, no retries either side | 50, this document's existing record (see below) |
+| `test:e2e`, `CI=1` | 51 passed before and after, no retries either side | **50 passed, no retries**, measured fresh |
 | `contracts lint` | 33, unchanged | 67, unchanged |
 | `format:check` | green | web green; the same 7 contracts files |
 
@@ -145,7 +145,11 @@ And after D11's renderer axis - the reference game's port onto the immediate hos
 
 **The +17 is the whole point of the phase and none of it is new behaviour.** All seventeen tests cover the 405 lines that were exercised on no node at all: 6 in a browser reading real pixels off a real canvas, 8 against a recording context for the culling a pixel test cannot see, 2 for the host-props boundary that keeps the play route identical on both nodes, and 1 for the subscription leak. The branch adds 6 more, for the manifest workaround that earned the node, which neither existing copy of that pipeline has a test for.
 
-**reveal-or-die did not move, and that is the measurement rather than an omission**: nothing was cascaded into it, deliberately, because `main` is not mergeable there until the `stemBranch` re-point (see Phase 2). Its four fast suites were re-measured to confirm it was untouched, and it is clean at `4b98f8d`. **Its e2e was NOT re-run**, and the honest reason is that it could not have said anything: the repo has no change in it, and the two repos cannot run e2e at once because they share the gateway ports. Recorded as this document's existing figure rather than as a fresh reading, exactly as the N3 session had to.
+**reveal-or-die did not move, and that is the measurement rather than an omission**: nothing was cascaded into it, deliberately, because `main` is not mergeable there until the `stemBranch` re-point (see Phase 2). All five of its suites were re-measured to confirm it was untouched, and it is clean at `4b98f8d`.
+
+**Its e2e WAS re-run this time, and that closes a gap the last two sessions had to leave open.** 50 of 50, no retries, at load 8 to 16. The N3 session could only quote this document's existing figure for that row, because the two repos share the gateway ports and the before/after pair had to be spent on the template. Here the template's pair was affordable AND reveal-or-die's could follow it, so the 50 is a reading rather than a record - which matters precisely because it is the number this document has had to correct twice, and because a suite that silently stops being collected looks exactly like a clean run.
+
+It is also a third clean data point for the load finding: 51 of 51 twice on the template at load 3.4 to 7.3, and 50 of 50 here at load 8 to 16, which is the highest load yet recorded without a failure. The documented failures remain at 20 and above.
 
 **The e2e pair on the template is the load-bearing measurement of this phase**, because the swap is a rendering change and `verify` deliberately proves nothing about a browser. 51 of 51 with no retries on the pixi renderer at load 4.8 to 7.3, then 51 of 51 with no retries on the immediate renderer at load 3.4 to 6.2, each about 14 minutes. The second run is the only thing in the tree that could establish that the canvas-2d host draws a board a player can actually click.
 
