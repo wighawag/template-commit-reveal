@@ -1,6 +1,7 @@
 {
   "branches": {
-    "main": {"stemBranch": "with/local-signer"}
+    "main": {"stemBranch": "with/local-signer"},
+    "with/pixi-js": {"stem": "main"}
   },
   "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit"
 }
