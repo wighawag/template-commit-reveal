@@ -1,7 +1,7 @@
 ---
 title: check-shared-divergence.sh's first real run, and the one thing it cannot see here
 type: finding
-status: spotted
+status: fixed
 spotted: 2026-09-09
 relates-to: work/specs/proposed/games-on-this-foundation.md (N6, D11), jolly-roger `tooling`
 ---
@@ -54,27 +54,34 @@ quietly resolve in one branch's favour.
 `with/pixi-js`, none drifted. So nothing is wrong today; what is missing is the
 thing that would tell us.
 
-### What to do about it, and what not to
+### FIXED UPSTREAM, 2026-09-09, which was the only correct place
 
-Do NOT edit the script on this repo's `tooling` branch to widen the filter. It
-is jolly-roger's file, adopted verbatim, and a local edit is the same
-divergence-by-copy the script itself exists to catch - one level up.
+Not by editing this repo's `tooling` branch. That copy is adopted verbatim and a
+local edit would be the same divergence-by-copy the script exists to catch, one
+level up - so the change went to **jolly-roger's `tooling` branch** (`80a18e1`)
+and was pulled back here with the documented one-line rebuild, which also tested
+that instruction.
 
-Two honest options, in order of cost:
+`EXT` is now a space-separated list defaulting to `ts`, so jolly-roger's own
+behaviour is unchanged - verified rather than assumed: its run reports the same
+80 shared files and the same allowed `mode.ts` before and after. This repo's
+ritual passes `EXT="ts svelte"` and covers **530 shared files instead of 367**.
 
-1. **Make the filter configurable upstream** (`EXT="${EXT:-ts}"` or a glob), so
-   this repo passes `.ts` and `.svelte` and jolly-roger's default is unchanged.
-   Small, and it is the change that makes the tool serve a second kind of
-   branch, which is the point at which a shared tool has earned its generality.
-2. **Leave it, and cover the specific invariant with a test**, which is what has
-   actually been done: the boundary test binds to whichever host the selector
-   names, so it fails from either side. That is stronger than a diff for this
-   one property and covers nothing else.
+**Checked for teeth**, because a checker that cannot fail is worse than none. A
+deliberate one-line drift added to `routes/play/+page.svelte`: `EXT="ts svelte"`
+reports DRIFTED and names it; the default reports "231 shared files checked,
+none drifted". That is the blind spot, demonstrated rather than argued.
 
-The two are complementary rather than alternatives. (1) is worth doing when
-something else in this tree needs it; the trigger is a branch whose intended
-difference is in a `.svelte` file, which `with/nft-identity` may well be, since
-identity acquisition is a UI.
+One detail worth keeping, because writing the guard did not prove it worked. The
+first test of "empty EXT must be refused" PASSED FOR THE WRONG REASON:
+`${EXT:-ts}` turns an empty value back into the default, so `EXT=` never reaches
+the guard and safely falls back. Only `EXT='  '` can reach an empty pattern. The
+guard is real and reachable, and the comment now says which case it is for -
+found by running the case rather than trusting code I had just written.
+
+The boundary test remains the better protection for the one specific invariant
+(it binds to whichever host is selected, so it fails from either side); the two
+are complementary rather than alternatives.
 
 ## The other half of N6, which is still true and still not built
 
