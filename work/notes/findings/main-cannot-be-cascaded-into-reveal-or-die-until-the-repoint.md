@@ -73,10 +73,29 @@ step later, and a `stemBranch` that moves twice is two chances to leave a
 descendant on the wrong node. Not recommended unless reveal-or-die needs an
 unrelated change from `main` before `with/all` exists.
 
-## What would have caught it automatically, for next time
+## What WOULD catch it, which the first version of this note understated
 
-Nothing in the tree looks for **an inherited file a descendant imports being
-deleted upstream**. Two cheap options, neither built:
+It said "nothing in the tree looks for this". That is wrong, and the correction
+matters because it changes what is worth building.
+
+**`offshoot-fanout --verify` would catch it.** reveal-or-die's configured verify
+is `pnpm install && pnpm --filter ./web check && pnpm --filter ./web run
+test:unit`, and `svelte-check` fails on the dangling import - that is exactly
+how the dangling import was confirmed. So the ritual already covers the tool
+path.
+
+**The gap is narrower and it is the HAND path.** The fanout stops at the
+conflict without merging, so verify never runs; a human then resolves three
+conflicts, all of which look routine, and has to remember to run `check`
+afterwards. That is precisely the situation the plan already warns about for a
+different reason - "if you merge by hand it reports up to date and verifies
+nothing" - so the failure mode is a known one wearing a new hat.
+
+The honest summary: **the guard exists, and it is one step further away than the
+thing that goes wrong.** Which is an argument for the warning being where the
+person is, not for a new checker.
+
+Two cheap options if one is wanted anyway, neither built:
 
 - resolve the descendant's imports of `$lib/game/**` against the stem's tree,
   as a test in the descendant, which is the same shape as the existing boundary
