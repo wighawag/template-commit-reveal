@@ -1,7 +1,7 @@
 ---
-title: The asset pipeline has to edit the one file the tree has already named a total conflict zone
+title: The vite config was a conflict zone for the whole tree, and now has a plugin seam
 type: observation
-status: spotted
+status: fixed
 spotted: 2026-09-09
 relates-to: work/specs/proposed/games-on-this-foundation.md (D11, N1), jolly-roger
 ---
@@ -39,7 +39,69 @@ conflict with a branch we own for a conflict with our own stem is not obviously
 a trade worth making, and it is not a decision that should be taken as a side
 effect of shipping a sprite.
 
-## Where the real fix lives
+## FIXED AT THE ROOT, 2026-09-09
+
+Done at **`template-svelte`**, the root of the tree, not in jolly-roger as this
+note first guessed and not on the branch. `web/vite.plugins.ts` exports
+`extraPlugins()`, spread into the plugin list immediately before `sveltekit()`,
+and it is empty there.
+
+**The evidence that it belonged at the root was that every level had already
+paid the same tax**, measured before writing it:
+
+| repo | its entire change to `vite.config.ts` |
+|---|---|
+| `template-svelte-tailwind` | one import, one line: `tailwindcss()` |
+| `template-svelte-shadcn` | inherited exactly that, added nothing |
+| `jolly-roger` | the same `tailwindcss()` line |
+| `conquest-website-2` | `enhancedImages()`, with a comment saying it must precede sveltekit |
+| `reveal-or-die` | restructured the file wholesale to get ~300 lines of art build out of it |
+| `with/pixi-js` | two lines for the sprite pipeline |
+
+Six repos, four independent authors, and every one of them put its plugin in the
+SAME SLOT between `devtoolsJson()` and `sveltekit()`. That is the seam saying
+where it is.
+
+**Two design points that turned out to be load-bearing.**
+
+- **A function, not a constant array.** `vite.config.ts` is also the vitest
+  config and declares `projects` that `extends` it, so it is evaluated several
+  times in one process. A module-level array hands all of them the SAME plugin
+  objects, and vite plugins hold per-build state.
+- **The spread's POSITION is the contract.** Before `sveltekit()` is what
+  Tailwind requires and what `enhancedImages` independently documented. Two
+  plugins from two repos wanting the same guarantee is what makes it a contract
+  rather than a default.
+
+**What it bought, per repo:** `vite.config.ts` is now byte-identical across
+`template-svelte`, `-tailwind`, `-shadcn`, `-tailwind-blog` and
+`conquest-website-2`; and separately identical across `jolly-roger` (all four
+branches), `bleeps`, `mandalas` and `template-commit-reveal` (both branches).
+jolly-roger's group differs from the root's for a real reason that stays - it
+imports `defineConfig` from `vitest/config` and adds the browser-test project.
+
+**For `with/pixi-js` specifically**, the shared-file edit list did NOT get
+shorter - it is still four - but `vite.config.ts` came off it and
+`vite.plugins.ts` went on, which is the difference between a conflict site and a
+switch.
+
+**Verified per repo rather than assumed**, because `check` and unit tests pass
+whether or not a plugin runs: Tailwind's emitted CSS was measured in each repo
+(21,434 bytes here, 110,949 in jolly-roger, 113/107/36 utility occurrences in
+bleeps/mandalas/ronan-eth), `enhancedImages` was confirmed by 20 emitted `.avif`
+files, and the sprite pipeline by a real build emitting the spritesheet and
+rewriting the manifest. A probe plugin was also used at the root to prove the
+seam is wired at all, since an indirection nobody has run is the thing most
+likely to type-check and do nothing.
+
+**One thing the cascade exposed:** `bleeps`, `mandalas` and `ronan-eth` have NO
+`offshoot` config and therefore no `verify` command, so the fanout merged into
+all three completely ungated. That is Phase 0's finding recurring in three repos
+nobody had checked. Verified by hand this time; worth giving them configs.
+
+## Where the fix was first guessed to live
+
+
 
 **In jolly-roger, not here.** The general shape of the problem is not about
 assets at all: it is that `vite.config.ts` in this tree is a template file that
