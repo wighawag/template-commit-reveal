@@ -56,22 +56,65 @@ working tree, and it is the case that will be normal from now on.
   three repos with no `verify` command at all), and the shape is the same: the
   gate reported success because it never ran the thing.
 
-## Three fixes, none done
+## Four options, and THE ONE THIS NOTE FIRST RECOMMENDED IS WRONG
 
-1. **Commit the localhost deployment records.** `ensure-deployments.mjs` was
-   written expecting exactly this, and its own comment says so ("exporting the
-   real records keeps one source of truth"). The cost is a directory of
-   addresses and ABIs in git that a developer's own deploy overwrites locally.
-   Cheapest, and it makes a fresh CLONE work too, which is the case that script
-   exists for.
-2. **Have `verify` deploy first.** Correct and far too slow for a gate; a gate
-   nobody runs is worse than none.
-3. **Let `ensure-deployments.mjs` fall back to the parent checkout's records**
-   when it is running in a linked worktree. Narrow, and it makes the verify
-   depend on a developer's machine state, which is what the whole worktree
-   arrangement exists to avoid.
+The first version of this note recommended committing the deployment records,
+on the strength of `ensure-deployments.mjs`'s own comment ("exporting the real
+records keeps one source of truth"). **That recommendation was made without
+measuring them**, and the measurement kills it. Corrected 2026-09-10, before
+anybody acted on it.
 
-(1) is the recommendation. Whoever takes it should check what
-`rocketh-export` writes for a chain id 31337 deployment and whether the
-addresses are stable across a fresh node, because a record that is wrong is
-worse than none: `check` would pass against contracts that do not exist.
+`contracts/deployments/localhost` is **1.3 MB across 12 files**, and the content
+is not addresses: one record is 67 KB of which the ABI is 25%, the rest being
+`bytecode`, `deployedBytecode`, `metadata`, `storageLayout` and `solcInput` -
+the last being the inlined source of every dependency the contract compiles
+from. It regenerates on every contract change and it differs per BRANCH, since
+each branch deploys different contracts. Committing it means a megabyte of
+churning generated JSON with a conflict on every feature branch forever, which
+is N1's own warning being ignored to fix a gate.
+
+| option | cost | verdict |
+|---|---|---|
+| **1. commit the RECORDS** | 1.3 MB per branch, conflicts forever | **rejected on measurement** |
+| **2. verify deploys first** | a node and a chain per verified node | rejected: a gate too slow to run is a gate nobody runs |
+| **3. fall back to the parent worktree's records** | machine state, and FALSE FAILURES: the main worktree is usually on a different branch, whose contracts are different ones | rejected, and worse than it looks |
+| **4. commit the EXPORT, not the records** | ~170 KB per branch, changes only when the ABI does | the shape to think from |
+| **5. synthesise from the compiled ABIs at install time** | a compile in verify (~40s), plus a script that knows `rocketh-export`'s output shape | the other candidate |
+
+**Option 4 is option 1 done to the right artifact.** What `check` and
+`test:unit` need is `web/src/lib/deployments.ts` (~170 KB: chain, addresses,
+ABIs, linkedData) and not the records it was exported from. It cannot be
+committed AT THAT PATH, because `deploy:watch` rewrites it continuously and a
+developer's tree would be permanently dirty - so it would be a committed
+SNAPSHOT elsewhere that `ensure-deployments.mjs` copies into place when the
+real file is absent, exactly as it already copies an export today. Refreshing
+it becomes a deliberate command when contracts change. The risk it carries is
+the one worth naming: a snapshot that has drifted from `src` makes `check` pass
+against an ABI that no longer exists, which is worse than `check` failing.
+
+**Option 5 has no artifact and therefore cannot drift**, because it is derived
+from the same source `check` is checking. It buys that with a second copy of
+`rocketh-export`'s output shape, which is precisely what that script's author
+rejected for a hand-written stub - though a thin one (a chain block and a map
+of `{address, abi, linkedData}`) exercised by every verify run is a different
+proposition from a stub nobody runs.
+
+**Not decided here, and deliberately not decided at the end of a session that
+found it.** Both touch `main` and cascade to every branch, and the choice turns
+on how much a stale snapshot frightens you against how much a duplicated shape
+does. Whoever takes it should also check whether a synthesised deployment can
+satisfy `resolvePlacementConfig`, which reads `linkedData` at RUNTIME through
+casts: an empty `linkedData` type-checks and would make the unit suite's
+config readers fail rather than the type checker.
+
+## What to do until then, which costs nothing
+
+**Verify by hand, and know that you are doing it.** That is what this session
+did for `with/pixi-js`: deploy into the worktree the fanout leaves behind, run
+`check` and `test:unit` there, and report the numbers. The e2e suite is
+unaffected either way - it deploys and exports inside its own worktree, which
+is why 51 of 51 passed there while `check` could not run at all.
+
+**Or merge with the target branch checked out**, where a local deploy has
+already left a `deployments.ts` behind. That is what every cascade before this
+one happened to do, which is why nobody had met this.
