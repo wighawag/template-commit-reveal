@@ -1,7 +1,8 @@
 {
   "branches": {
     "main": {"stemBranch": "with/local-signer"},
-    "with/pixi-js": {"stem": "main"}
+    "with/pixi-js": {"stem": "main"},
+    "with/nft-identity": {"stem": "main"}
   },
   "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit"
 }
