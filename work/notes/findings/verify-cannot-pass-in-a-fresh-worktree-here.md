@@ -1,7 +1,7 @@
 ---
 title: offshoot-fanout --verify cannot pass in a fresh worktree in this repo
 type: finding
-status: open
+status: DECIDED 2026-09-12 (option 6); not yet built
 spotted: 2026-09-10
 relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 0, the verify gate), scripts/ensure-deployments.mjs
 ---
@@ -107,7 +107,89 @@ satisfy `resolvePlacementConfig`, which reads `linkedData` at RUNTIME through
 casts: an empty `linkedData` type-checks and would make the unit suite's
 config readers fail rather than the type checker.
 
-## STILL NOT DECIDED, 2026-09-11, and the reason is now sharper than "nobody has picked"
+## DECIDED 2026-09-12, and it is neither of the two candidates
+
+**The measurement the previous entry asked for was made, and it killed option 5
+and produced a better option than option 4.**
+
+The question was whether a deployment synthesised from the compiled ABIs could
+satisfy `resolvePlacementConfig`, which reads `linkedData` at RUNTIME through
+casts. It cannot, and the failure is exactly the shape predicted:
+
+| with every `linkedData` blanked | result |
+|---|---|
+| `pnpm --filter ./web check` | **0 errors, 0 warnings** |
+| `pnpm --filter ./web run test:unit` | **6 failed in 2 files**, 1488 passed |
+
+The six are `test/lib/context/fatal.test.ts` and `test/lib/context/ssr-context.test.ts` -
+the context-construction tests, which build the real config. So a synthesised
+deployment would leave `check` green and the unit suite permanently red, which is
+the same disease this note is about: a gate that cannot pass.
+
+**Why option 5 cannot be rescued: `linkedData` is not in any ABI.** It is what
+the DEPLOY declared - `startTime`, `commitPhaseDuration`, `revealPhaseDuration`,
+the token address, `placementCost`, and the sale's `price` and `amount`. Nothing
+derives those from a compile, and a synthesiser that invented plausible values
+would be a stub that silently disagrees with the deployment, which is the drift
+risk that was supposed to be option 5's advantage over option 4.
+
+### The measurement that decides it: 98% of the export is ABI
+
+```
+full export      165 KB
+  of which abi   162 KB     <- derivable from a compile
+  linkedData     422 bytes  <- 2 blocks, and NOT derivable
+  chain block    426 bytes  <- properties incl. expectedWorstGasPrice
+```
+
+**So the part that cannot be synthesised is under a kilobyte**, and the part that
+makes option 4 expensive is exactly the part option 5 can generate.
+
+### Option 6, which is the recommendation
+
+**Synthesise the ABIs and addresses from the compiled artifacts at install time,
+and COMMIT the ~1 KB that cannot be derived** (each contract's `linkedData`, the
+chain's `properties`, and the addresses).
+
+It takes the strength of each rejected option and drops the cost of both:
+
+- **It cannot drift in the way that killed option 4.** The 162 KB of ABI is
+  generated from the same source `check` is checking, so a committed snapshot can
+  never describe a contract that no longer exists. That was the one risk worth
+  naming about option 4 and it is gone.
+- **It passes the unit suite**, which option 5 cannot, because the deployment
+  parameters are real rather than invented.
+- **It churns almost never.** The committed kilobyte changes only when a deploy
+  PARAMETER changes - a phase duration, a price - which is a deliberate act,
+  where the ABI changes on every contract edit. Option 4's snapshot changes
+  every time either does.
+- **~1 KB per branch against option 4's 170 KB and option 1's 1.3 MB.** N1's
+  warning about churning generated files in shared paths stops applying at this
+  size.
+
+**What it costs, stated rather than hidden:** a script that knows
+`rocketh-export`'s output shape, which is precisely what that script's author
+rejected for a hand-written stub. The counter-argument the note already makes
+still holds and is stronger here - a shape exercised by every `verify` run on
+four branches is a different proposition from a stub nobody runs - and the
+surface is now much smaller than option 5 implied, since only the assembly is
+hand-written and the ABIs come out of the toolchain.
+
+**Two things to check when building it**, neither measured yet: whether contract
+ADDRESSES need to be real or whether deterministic placeholders satisfy the six
+tests (blanking `linkedData` alone accounts for all six, so addresses may be
+free), and whether `ensure-deployments.mjs` can assemble this without a compile
+on a fresh clone - if it needs one, that is ~40s added to every `verify`, which
+is option 5's cost reappearing.
+
+**Not built here.** It touches `main` and cascades to four branches, and the
+sibling finding argues the e2e type-check is the gate to widen first - it is open
+in every repo of the tree rather than only in worktrees, and a perfect `verify`
+would still have missed the bug that mattered in Phase 2's last cascade.
+
+## The reasoning that led here, kept because the options table is still the argument
+
+### Previously: NOT DECIDED, 2026-09-11, and the reason is sharper than "nobody has picked"
 
 Phase 2's last two nodes did not need it decided, exactly as the task expected,
 and verifying by hand cost nothing. Three things that session learned, all of

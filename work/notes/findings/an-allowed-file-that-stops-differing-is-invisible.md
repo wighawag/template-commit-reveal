@@ -1,12 +1,47 @@
 ---
 title: A branch whose defining difference is reverted passes every gate in this tree
 type: finding
-status: open
+status: FIXED 2026-09-12 (jolly-roger tooling@f346ace)
 spotted: 2026-09-11
 relates-to: work/specs/proposed/games-on-this-foundation.md (N6, D11), jolly-roger `tooling`:check-shared-divergence.sh
 ---
 
 # `check-shared-divergence.sh` looks for drift in one direction only, and the other direction is silent
+
+> **FIXED 2026-09-12 on jolly-roger's `tooling` branch** (`f346ace`, with the
+> README in `31c3f67`), which is where an adopted tool's changes belong. Pulled
+> back here with the documented one-line rebuild.
+>
+> `ALLOWED` is enforced on both sides now: an entry that is shared and identical
+> everywhere fails as `ALLOWED BUT IDENTICAL`. Judged ACROSS the features in one
+> run, so an entry that is the switch for one branch and identical on another
+> does not fail; an entry shared by NO feature is a note rather than a failure,
+> which keeps a deleted allowed file legal as this note required.
+>
+> **A second bug was found while fixing it, and it made the documented ritual a
+> lie.** `${ALLOWED:-...}` turned a set-but-empty value back into the script's
+> default, so the "run it once with `ALLOWED=` empty" ritual that every README in
+> this tree prescribes - the run that proves the clean files are clean because
+> they are IDENTICAL rather than because the script matched nothing - quietly kept
+> an allowance. It never showed, because the default entry
+> (`core/connection/mode.ts`) happens not to differ in the repos where that ritual
+> is run. One character: `${ALLOWED-...}`.
+>
+> Checked by running each case rather than reading the patch: jolly-roger's own
+> run is byte-identical before and after (80 shared files, mode.ts allowed,
+> green); an ALLOWED file reverted to the base's version is named and fails where
+> the old script said "none drifted"; a DELETED allowed file stays green with a
+> note; an entry differing on one feature and not another stays green; and
+> `ALLOWED=` now reports mode.ts as drifted.
+>
+> **It immediately caught a real error in something written the day before.**
+> `README.all.md` prescribed running all three of its divergence checks with the
+> UNION `ALLOWED` list. Against `BASE=with/pixi-js` the renderer selector is
+> identical - which is the whole point, since `with/all` inherits it - so that
+> run was making a false claim and now fails on exactly that entry. Each run
+> takes its own parent's list now, which is a stronger check than what it
+> replaced: green on run two means "differs in exactly the identity axis's twelve
+> files, ALL of them" rather than "nothing unexpected differs".
 
 Found by mutation while building `with/all` (Phase 2). The mutation was meant to
 confirm that the integration node has teeth for BOTH axes. It does for the
