@@ -1,12 +1,46 @@
 ---
 title: The asset pipeline backport is a move whose second half is blocked on the re-point
 type: observation
-status: spotted
+status: DONE 2026-09-11
 spotted: 2026-09-09
 relates-to: work/specs/proposed/games-on-this-foundation.md (Decision 2, D11, Phase 2)
 ---
 
 # The pipeline can be taken up now; the descendants' copies cannot be deleted yet
+
+> **DONE 2026-09-11, in the same commit as the re-point, and THE LIST WAS WRONG
+> ABOUT ONE OF ITS THREE ITEMS.** This note said the load gate should go "to
+> whatever extent the inherited versions actually cover them (this needs a diff
+> at the time, not an assumption now)". That hedge earned its keep: the diff says
+> they do not.
+>
+> | item | what happened |
+> |---|---|
+> | `reveal-or-die/web/vite.assetpack.ts` | **deleted**, replaced by the branch's 225-line reconciliation. Same three path constants, same assetpack config, so the swap is safe; what it gains is conquest's `fixManifest` and the self-disable |
+> | the `existsSync` / `writeEmptyManifest` block in `web/vite.config.ts` | **deleted.** Both decisions it made now live inside the plugin, and `extraPlugins()` arrives by merge, so what is left of this repo's edit to that file is `basicSsl` and `hookup()` |
+> | `web/src/lib/world/render/assets.ts` | **deleted**, inherited at `$lib/game/render/pixi/assets.ts`. Checked rather than assumed: the same four exports with the same signatures, three consumers repointed |
+> | `web/src/lib/ui/loading/` | **KEPT, and the list was wrong to put it in question** |
+>
+> **Why the load gate stays.** The inherited `LoadingGate.svelte` is 55 lines
+> that put a progress bar over the CANVAS. reveal-or-die's `ui/loading/` is 288
+> lines of branded, staged, full-screen splash with a logo, a stage machine and a
+> first-visit memory in localStorage. They are not two copies of one thing; they
+> are a framework gate and a game's brand, and Decision 2 leaves brand with the
+> game. The inherited gate's own doc comment says exactly that, having been
+> written with this repo's splash in front of it.
+>
+> Both read the same progress store, and the splash outlasts the gate by
+> construction (it waits on its own stage machine as well as on the store), so
+> the gate is never visible from behind it. Redundant-but-invisible, at 55 lines,
+> and removing it would cost a shared-file edit. Left alone deliberately.
+>
+> **conquest-v1's copy is still untouched and still legitimate**, exactly as this
+> note says: it stems from jolly-roger directly and inherits nothing from here.
+>
+> The instruction to re-run against real art was followed: reveal-or-die has five
+> authored sprites plus the template's `cell.png`, which now arrives in
+> `assets/sprites/` and joins its atlas. See the observation on branch material
+> cascading for why that was left rather than deleted.
 
 Decision 2 states the rule this repo has already paid to learn: **a backport is
 a MOVE, not a re-implementation, and the descendant's copy is deleted in the

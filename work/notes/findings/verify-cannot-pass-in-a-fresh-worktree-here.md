@@ -107,6 +107,35 @@ satisfy `resolvePlacementConfig`, which reads `linkedData` at RUNTIME through
 casts: an empty `linkedData` type-checks and would make the unit suite's
 config readers fail rather than the type checker.
 
+## STILL NOT DECIDED, 2026-09-11, and the reason is now sharper than "nobody has picked"
+
+Phase 2's last two nodes did not need it decided, exactly as the task expected,
+and verifying by hand cost nothing. Three things that session learned, all of
+which narrow the question rather than answering it:
+
+- **The asymmetry is now permanent rather than incidental.** The cascade
+  `main -> {with/pixi-js, with/nft-identity} -> with/all -> reveal-or-die` merged
+  the three template branches in TEMPORARY WORKTREES (none is checked out; there
+  is one working tree and four branches) and reveal-or-die IN PLACE, because its
+  `main` is checked out. So in one run, `--verify` genuinely verified the
+  descendant and could not have verified any of the three branches. That is not
+  a transitional state - it is what this repo's shape produces from now on.
+- **It was not needed this time, and it would have been the wrong gate anyway.**
+  The bug that mattered in that cascade was in `web/e2e/**`, which `check` does
+  not type-check at all (see the sibling finding). A verify that ran perfectly
+  would still have been green on it.
+- **That is a reason to widen the gate before fixing this one.** Both options
+  here cost a change on `main` that cascades to four branches; the e2e
+  type-check costs one at the root of the tree and closes a hole that is open in
+  every repo, not just in worktrees. If only one of the two gets done, it should
+  be that one.
+
+**What would settle THIS one, unchanged and still unmeasured:** whether a
+synthesised deployment (option 5) can satisfy `resolvePlacementConfig`, which
+reads `linkedData` at RUNTIME through casts. An empty `linkedData` type-checks,
+so the failure would land in the unit suite's config readers rather than in the
+type checker - which is a half-hour of measuring and would decide it either way.
+
 ## What to do until then, which costs nothing
 
 **Verify by hand, and know that you are doing it.** That is what this session

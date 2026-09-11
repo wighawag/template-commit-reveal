@@ -1,12 +1,42 @@
 ---
 title: The contracts e2e assumes which contract sorts first, and reveal-or-die already fixed it
 type: observation
-status: spotted
+status: DONE 2026-09-11
 spotted: 2026-09-10
 relates-to: work/specs/proposed/games-on-this-foundation.md (Decision 2, the backport list)
 ---
 
 # Four inherited tests broke because a branch added a contract called `AvatarSale`
+
+> **MOVED UP 2026-09-11**, once the re-point unblocked it, and it was NOT the
+> free move it looks like.
+>
+> `e2e/fixtures/contracts-page.ts` is on `main` now; the four tests ask for a
+> contract; reveal-or-die's copy is deleted and it inherits the file with **one
+> executable line different** (`WRITE_FUNCTION`, which names each app's own
+> write), measured rather than hoped. The second half arrived free too:
+> `WRITE_FUNCTION`, `writeForm` and `executeButton` lived in
+> `stalling-wallet.ts` upstream, and `e2e-account-claims.test.ts` reads an import
+> of that file as claiming one of its accounts - so wanting a form locator made a
+> suite look like it was racing another for a nonce.
+>
+> **WHAT THE MOVE COST, AND IT IS THE REASON TO KEEP READING THIS NOTE.** The
+> diff of the two copies was one line, so the move looked provably safe. It was
+> not: `selectContract` reads the trigger to decide whether it needs to pick, and
+> until `$deployments` loads the trigger reads "Select a contract" and the
+> dropdown has NO items. It clicked, and waited out 30 seconds for an item that
+> did not exist yet. **Four tests failed all three attempts and two more came out
+> flaky, on the first full run after the move.**
+>
+> reveal-or-die never lost that race because its own opening test asserts the
+> placeholder is gone BEFORE calling the fixture - the wait was in the caller, by
+> luck. Upstream's tests go straight in. The wait is in the fixture now.
+>
+> The general form, which is the thing worth carrying: **a move whose diff is one
+> line is not therefore a safe move.** What differed was not the file, it was what
+> the two repos' callers happened to have done before calling it, and no diff of
+> the moved artifact could show that. It took a 25-minute browser run, and `check`
+> plus 1,477 unit tests were green throughout.
 
 `web/src/routes/contracts/+page.svelte` opens on the first entry of
 `Object.keys($deployments.contracts)`, which is alphabetical. On `main` that is

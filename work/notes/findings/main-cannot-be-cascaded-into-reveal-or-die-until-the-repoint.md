@@ -1,12 +1,44 @@
 ---
 title: main is not mergeable into reveal-or-die until its stemBranch is re-pointed
 type: finding
-status: open
+status: CLOSED 2026-09-11
 spotted: 2026-09-09
 relates-to: work/specs/proposed/games-on-this-foundation.md (D11, Phase 2)
 ---
 
 # Do not cascade `template-commit-reveal@main` into `reveal-or-die` yet
+
+> **CLOSED 2026-09-11.** `with/all` exists, reveal-or-die's `stemBranch` points
+> at it, and the merge is done and green (check 0, unit 1674 in 136 files plus
+> 65 in 10, contracts 14, e2e 50 of 50 with no retries). The warning section this
+> note backed has been deleted from `AGENTS.md` in both repos.
+>
+> **What the re-point actually cost, against this note's measurement: 40
+> conflicts, not 3.** That is not this note being wrong - it measured a merge
+> from `main`, and `with/all` carries two feature branches on top of it. The
+> split was 21 content, 17 modify/delete, 1 add/add and 1 file-location; 14 of
+> them were `contracts/`, which are never inherited here and resolve one way.
+>
+> **AND THE THING THAT ACTUALLY BROKE THE BUILD WAS NOT A CONFLICT, exactly as
+> this note argues - but it was the OPPOSITE shape to the one predicted.** This
+> note is about a clean DELETION leaving a dangling import. What happened was
+> clean ADDS: `contracts/src/game/avatar/`, `GameAvatars.sol`,
+> `GameAvatarSale.sol` and a deploy script arrived with no conflict at all and
+> broke the compile with duplicate declarations against this game's own avatar
+> contracts, and four inherited test files arrived the same way naming a
+> `$lib/placement` this game deleted years of commits ago.
+>
+> **Three of the same family, in one merge**, and the third is the most
+> expensive: a clean hunk rewrote `escape-hatch.e2e.ts`'s seven test inputs from
+> addresses to digits, because upstream had just renumbered its own for a
+> `uint256` signature. This game's write takes an `address`. `check` and 1,674
+> unit tests were green; the e2e failed with 'the stalling wallet was never
+> handed a transaction', which points at the node and the worker count.
+>
+> So the general form is wider than 'a deletion': **any hunk that merges cleanly
+> because the two sides were never in textual conflict can still be semantically
+> wrong in the descendant.** `verify` caught the first two (the compile and
+> `check`). Only e2e caught the third, and e2e is not in `verify`.
 
 **This is a live hazard with a known fix and a known owner, not a defect.** It
 is created by D11's own sequencing and it closes at the end of Phase 2. Written
