@@ -1,9 +1,21 @@
 {
+  "stem": "github:wighawag/jolly-roger",
   "branches": {
-    "main": {"stemBranch": "with/local-signer"},
-    "with/pixi-js": {"stem": "main"},
-    "with/nft-identity": {"stem": "main"},
-    "with/all": {"stem": ["with/pixi-js", "with/nft-identity"]}
+    "main": {
+      "stemBranch": "with/local-signer"
+    },
+    "with/pixi-js": {
+      "stem": "main"
+    },
+    "with/nft-identity": {
+      "stem": "main"
+    },
+    "with/all": {
+      "stem": [
+        "with/pixi-js",
+        "with/nft-identity"
+      ]
+    }
   },
   "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit"
 }
