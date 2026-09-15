@@ -7,6 +7,23 @@ blockedBy: []
 
 # `rename-term.sh`, on jolly-roger's `tooling` branch
 
+## Start here, from a cold context
+
+```sh
+cat CONTEXT.md                                    # the glossary, in the working tree
+git show work:docs/adr/0001-cycle-is-the-frameworks-word-round-and-turn-belong-to-games.md
+git show work:work/tasks/backlog/the-vocabulary-rename.md   # the first consumer
+```
+
+The `work` branch is also checked out at `~/dev/worktrees/template-commit-reveal/work`
+on the machine this was written on. `check-shared-divergence.sh` on jolly-roger's
+`tooling` branch is the model to copy: read it, and read `README.pixi-js.md` in
+this repo for how a `tooling` script is adopted and rebuilt.
+
+**This tool knows nothing about cycles.** It renames any term in any repo, which
+is why it belongs on jolly-roger's branch rather than this one even though the
+vocabulary that motivates it is this template's.
+
 ADR-0001 settles the vocabulary and stages the code behind it. The staging spans
 this repo's four branches now and five game repos later, each of which renames
 ONCE, at its own port, months apart, by somebody who was not here. That is five
@@ -49,8 +66,31 @@ output, a README section, exit non-zero on failure):
   anything.
 - **`apply`** - takes a MAPPING FILE of `from -> to` and rewrites, dry-run by
   default. Case-aware from one entry, so `epoch -> cycle` also does `Epoch ->
-  Cycle`, `EPOCH -> CYCLE`, `currentEpoch -> currentCycle`. Word-boundaried,
-  always.
+  Cycle`, `EPOCH -> CYCLE`, `currentEpoch -> currentCycle`.
+
+**IT MATCHES IDENTIFIER PARTS, NOT WORD BOUNDARIES, and getting this backwards
+breaks it in both directions.** Measured on `main` at `bb3fb1bb`:
+
+```sh
+# word-boundaried: 927 occurrences in 70 files
+grep -roiw --include='*.sol' --include='*.ts' --include='*.svelte' --include='*.md' \
+  epoch contracts/src contracts/deploy contracts/rocketh contracts/test \
+  web/src web/test web/e2e | wc -l
+# as an identifier part: 1720 occurrences in 73 files
+grep -roi  --include='*.sol' ... (same paths, no -w) | wc -l
+```
+
+A word-boundaried pass would MISS 793 of them, because the word is usually
+inside an identifier: `epochInfo` 56, `currentEpoch` 43, `epochDuration` 24,
+`EpochPolicy` 23, `EpochInfoStore` 17, `epochPolicy` 14, `EpochConfig` 12. A
+naive substring pass instead OVER-REACHES, and the counts for that are just as
+real: `foreground` 259, `background` 64, `Math.round` 35, `rounding` 14,
+`roundTo` 4.
+
+So the rule is neither: split an identifier into camel, Pascal and snake PARTS
+and match a whole part. `currentEpoch` has a part `Epoch` and renames;
+`foreground` has one part and does not; `Math.round` and `drandRound` do have a
+matching part and need the allowlist.
 - **`verify`** - no occurrence of a renamed term survives outside an allowlist,
   and no duplicate definitions were introduced (the `uniq -d` check `HANDOFF.md`
   already prescribes after every merge, which is the same hazard).
@@ -78,22 +118,48 @@ text. If that turns out to be needed, it is a second tool and a second decision.
 
 ## Acceptance
 
-- `report` on `template-commit-reveal@main` for `epoch` reproduces the figure
-  this plan already records - **1,715 occurrences in 73 files** - and splits it
-  by class, with the wire names (three event topics, `InvalidEpoch`,
-  `epochPolicy`) named individually.
+**Every number below carries the command that produced it, and a number without
+its command is a trap rather than a baseline.** This is not pedantry: the first
+draft of this task said "1,715 in 73 files" from a four-grep sum that omitted
+`*.md`, and re-measuring the same tree with one command said 1,720. Re-measure
+before starting and expect drift as work lands; a mismatch means the tree moved,
+not that the tool is wrong.
+
+- `report` on `template-commit-reveal@main` for `epoch` reproduces **1,720
+  occurrences in 73 files** at `bb3fb1bb`, by the identifier-part command above,
+  and splits them by class.
+- The WIRE class names every ABI-visible site individually. At `bb3fb1bb` that
+  is: `getEpoch`, the `epoch` return of `getCellsInZone`/`getCellsInZones` and
+  of `advanceRound`, `InRevealPhase`, `InCommitmentPhase`, `CanStillReveal`,
+  `InvalidEpoch`, `InvalidEpochConfiguration`, the `epoch` topic on
+  `CommitmentCancelled`, `CommitmentMade`, `CommitmentRevealed`,
+  `CommitmentVoid` and `RoundAdvanced`, the `EpochPolicy` enum, and the
+  `epochPolicy` field of `Config` which is also a `linkedData` key.
+  **Solidity parameter names are part of the ABI**, so `uint64 epoch` in an
+  error or an event is a wire site and not an internal one.
 - `apply` with an EMPTY mapping changes nothing. That is the run that proves the
   tool is doing the work rather than matching nothing, and it is the same ritual
   every checker in this tree has.
-- The `foreground` case: a mapping of `round -> cycle` applied to a file
-  containing `foreground`, `background`, `rounding` and `drandRound` leaves all
-  four alone. **258 substring matches in this tree** make this the mistake the
-  tool exists to prevent.
+- The over-reach case: a mapping of `round -> cycle` leaves `foreground` (259),
+  `background` (64), `Math.round` (35), `rounding` (14) and `roundTo` (4)
+  untouched, and renames `RoundPhase`. `Math.round` is the one that proves the
+  allowlist is real rather than decorative, because a part-matcher DOES match it
+  and `Math.cycle` is the result.
+- The under-reach case: a mapping of `epoch -> cycle` renames `epochDuration`,
+  `currentEpoch` and `EpochInfoStore`. A tool that only does whole words passes
+  every other test here and is useless.
+- `verify` FAILS on a tree with one straggler left, and says which file.
 - `verify` FAILS on a tree with one straggler left, and says which file.
 - It runs against a layout that is not this one. reveal-or-die is the available
   proof (its contracts are its own and its client is ported); bomber-world's
   `onchain/evm/` cannot be tested until that repo is cloned on the machine doing
   the work.
+
+**`drandRound` is forward-looking and is not in the tree today.** It arrives
+with fuzd in Phase 5, where a scheduled reveal is encrypted against a drand
+round. It is in the allowlist now so that whoever adds fuzd does not have to
+rediscover the collision; do not go looking for it and conclude this task is
+confused.
 
 ## Checked by running the case, not by reading the patch
 

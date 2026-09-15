@@ -7,6 +7,20 @@ blockedBy: [the-vocabulary-rename]
 
 # Five games, five mappings, and only one of them is a standalone job
 
+## Start here, from a cold context
+
+```sh
+cat CONTEXT.md                                    # the glossary, in the working tree
+git show work:docs/adr/0001-cycle-is-the-frameworks-word-round-and-turn-belong-to-games.md
+git show work:work/tasks/backlog/rename-a-term-across-a-repo.md
+git show work:work/tasks/backlog/the-vocabulary-rename.md
+```
+
+**Nothing here starts until the template's own rename has landed**, because the
+template is where the tool gets its teeth and the mapping gets its shape. Check
+that first: if `grep -ri epoch web/src contracts/src` still finds anything on
+`template-commit-reveal@main`, this task is not ready.
+
 `CONTEXT.md` cascades to every game the moment it merges, so each of them will
 hold a glossary saying `cycle` over a codebase saying `epoch`. That is recorded
 as expected rather than as drift (`AGENTS.md` says a descendant full of `epoch`
@@ -53,6 +67,12 @@ goes upstream on its own.
 
 Per repo, at the time it is done:
 
+- **its own before-counts measured first, with the command recorded next to
+  them.** The figures in this plan are the template's and are not transferable:
+  reveal-or-die's per-player `Round` sense alone is 189 occurrences in 26 files
+  against the template's 148 in 22, measured at `88b17dd`. A number without its
+  command is a trap, which this task's siblings have already been bitten by
+  once.
 - its suites green at exactly the counts recorded for it before the rename, not
   one test fewer;
 - `rename-term.sh verify` clean against that repo's own mapping and allowlist;
