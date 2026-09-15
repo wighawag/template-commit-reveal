@@ -167,7 +167,7 @@ And after `with/nft-identity`, which is Phase 2's second node:
 
 **EVERY CONTRACT COUNT IN THIS DOCUMENT IS INFLATED BY EXACTLY ONE, AND THE EXTRA IS NOT A TEST.** `contracts/test/js/utils/index.ts` is a HELPER with no `it()` in it, and `hardhat.config.ts` points `nodejs` at the whole `test/js` DIRECTORY, so the runner collected it and counted it as one passing item. Every number this document records was a faithful reading of what the runner printed; what it printed included a file that asserts nothing.
 
-Measured 2026-09-15 on a toolchain that no longer collects it: `main` and `with/pixi-js` run **18**, `with/nft-identity` and `with/all` run **20**, where this document says 19 and 21. The arithmetic reconciles exactly (18+1 and 20+1), and `contracts/` is byte-identical across the commits in question, so nothing was lost and nothing regressed. reveal-or-die's 14 is subject to the same correction and should be re-read rather than assumed. The inflation dates from `516d9ec0`, which added the fixture directory.
+Measured 2026-09-15 on a toolchain that no longer collects it: `main` and `with/pixi-js` run **18**, `with/nft-identity` and `with/all` run **20**, where this document says 19 and 21. The arithmetic reconciles exactly (18+1 and 20+1), and `contracts/` is byte-identical across the commits in question, so nothing was lost and nothing regressed. reveal-or-die reads **13** on the same toolchain, against its recorded 14, which is the same +1 and confirms the cause generalises beyond this repo. The inflation dates from `516d9ec0`, which added the fixture directory.
 
 **A FIRST VERSION OF THIS CORRECTION, WRITTEN THE SAME DAY, GOT THE CAUSE WRONG, AND IS RECORDED BECAUSE THE WRONG VERSION IS INSTRUCTIVE.** It concluded that the tables held an off-by-one arithmetic error which had propagated for three sessions, on the evidence that the run listed 18 tests by name and that `git log` showed the suite growing 16 -> 17 -> 18. All of that was true, and the conclusion did not follow. The session-start run in that very same session had printed a line reading `✔ .../contracts/test/js/utils/index.ts` immediately above `21 passing`, which names the cause outright. **The evidence was already in hand and was read past, because the count had a plausible explanation and a plausible explanation feels like a finished one.**
 
@@ -179,7 +179,7 @@ And after `with/all` and the re-point, which are Phase 2's last two nodes and cl
 
 | suite | template-commit-reveal | reveal-or-die |
 |---|---|---|
-| `contracts:test` | **18** on `main` and `with/pixi-js`, **20** on `with/nft-identity` and on `with/all` (all corrected 2026-09-15: the old 19 and 21 counted a helper file, see above) | 14, and subject to the same correction |
+| `contracts:test` | **18** on `main` and `with/pixi-js`, **20** on `with/nft-identity` and on `with/all` (all corrected 2026-09-15: the old 19 and 21 counted a helper file, see above) | **13**, corrected from 14 for the same reason |
 | `web:check` | 0 errors on all four branches | 0 errors, 0 warnings |
 | `test:unit` server | 1477 in 124 on `main`; 1483 in 125 on `with/pixi-js`; 1485 in 125 on `with/nft-identity`; **1494 in 126 on `with/all`** | 1662 in 134 -> **1674 in 136** |
 | `test:unit` client | 71 in 11 on all four | 65 in 10, unchanged |
