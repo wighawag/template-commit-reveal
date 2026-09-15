@@ -607,9 +607,9 @@ That is the recorded rule firing again: **when a module justifies its existence 
 
 | suite | template-commit-reveal | reveal-or-die |
 |---|---|---|
-| `contracts:test` | 18 -> **33** on `main` and `with/pixi-js`; 20 -> **35** on `with/nft-identity` and `with/all` | **13, unchanged** (its contracts are its own) |
+| `contracts:test` | 18 -> **36** on `main` and `with/pixi-js`; 20 -> **38** on `with/nft-identity` and `with/all` | **13, unchanged** (its contracts are its own) |
 | `web:check` | 0 errors on all four branches | 0 errors, 0 warnings |
-| `test:unit` server | 1477 -> **1495 in 126** on `main`; 1486 -> **1504 in 127** on `with/pixi-js`; 1485 -> **1503 in 127** on `with/nft-identity`; 1494 -> **1512 in 128** on `with/all` | 1674 -> **1692 in 138** |
+| `test:unit` server | 1477 -> **1496 in 126** on `main`; 1486 -> **1505 in 127** on `with/pixi-js`; 1485 -> **1504 in 127** on `with/nft-identity`; 1494 -> **1513 in 128** on `with/all` | 1674 -> **1693 in 138** |
 | `test:unit` client | 71 in 11 on all four, unchanged | 65 in 10, unchanged |
 | `test:e2e`, `CI=1` | **51 of 51 with no retries on all four**: `main` 6.8 min, `with/pixi-js` 6.7, `with/nft-identity` 6.9, `with/all` 7.2 | **50 of 50, no retries, 7.4 min** |
 | `contracts lint` | 33 -> **34** on `main`/`with/pixi-js`, 46 -> **47** on the identity branches | 67, unchanged |
@@ -692,6 +692,42 @@ That is eight phases running in which mutation found a gap a green suite was hid
 - **One mutation is recorded as deliberately unpinned:** `_stopWaitingFor`'s idempotence guard is unreachable from outside today (`withdrawFromReserve` refuses a zero amount and an empty reserve), so removing it passes the suite. The reason is a comment at the guard rather than a test that would have to reach through a route that does not exist - and the guard is there for the second caller Phase 6 will add, where without it a subset could satisfy "unanimity".
 
 **The mutation numbers were wrong the first time, in the direction that flatters, and the cause is its own finding.** Two runs reported seven failures where the honest answers were one and three, because the new suite was flaky: the chain's clock is wall-clock, the localhost reveal phase is a quarter of the cycle, and a suite whose first act is a commitment fails outright one run in four. Six clean consecutive runs is what established the fix. **A mutation report is only as trustworthy as the determinism of the suite it is measured against**, and a suite that has just been written is exactly the one whose determinism nobody has established. See `work/notes/findings/a-contracts-suite-that-does-not-pin-the-phase-flakes.md`.
+
+### A COLD REVIEW FOUND THREE HOLES IN THIS PHASE AFTER IT HAD LANDED GREEN
+
+**Phase 3 shipped, on five nodes, with 51 of 51 e2e and sixteen mutations, and it
+contained a denial-of-service and two routes to a lost stake.** A subagent review
+with no memory of building it found all three; every one was verified against the
+tree before being acted on. See `work/notes/findings/unanimity-counted-two-different-sets.md`.
+
+- **Unanimity compared two different sets.** `_makeCommitment` never asked
+  whether the committer was a member, and a zero bond against a zero reserve
+  passes every other check, so any address could inflate the count the advance is
+  measured against. Enough throwaway addresses close the commit phase before a
+  real player acts, every block, for gas; on a manual game they simply never
+  reveal and freeze the cycle for good, locking every committed bond.
+- **A member could leave with a turn still open**, because `locked` is the BOND
+  and an empty turn bonds zero. The denominator shrinks, the numerator does not,
+  and a subset satisfies unanimity. An idle player's automatic commit is exactly
+  an empty turn, so this was ordinary play rather than an attack.
+- **Auto-commit and the fallback reveal were off on the new policy.** Both gated
+  on `type === 'timed'` where the question is whether there is a clock;
+  TypeScript narrows that happily when a third member joins the union.
+
+Fixed as `NotInGame`, `CommitmentStillOpen` and `!== 'manual'`, with four
+mutations and three new contract tests plus one client test.
+
+**The reason mutation missed all of it is worth carrying**, because this document
+has praised mutation for eight phases: a mutation perturbs code that EXISTS, and
+these were missing checks with no line to mutate. **Mutation tests the code you
+wrote; review tests the code you did not.** The suites' own blind spot was the
+same shape: every committer in them was a member by construction, so the two
+counts were never given a chance to disagree.
+
+**And two of the three are invisible on a timed deployment**, which is every
+deployment in this tree. The policies they break are the two this phase exists to
+add, so they would have shipped as features and been found by the first game to
+use one.
 
 ### Neither open item was taken, and the e2e numbers on this machine are not comparable
 
