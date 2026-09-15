@@ -165,11 +165,15 @@ And after `with/nft-identity`, which is Phase 2's second node:
 
 **Every pre-change number in both repos was re-measured from scratch and every one was exactly what this document already said**, which is now five sessions running that nothing had gone stale. reveal-or-die's `contracts:test` reads 14 rather than the 9 older tables in this document quote, because of the mint work (`c18220b`); that is a correction to the older rows rather than a movement.
 
+**ONE NUMBER IN EVERY TABLE ABOVE IS WRONG, AND IT IS `main`'s CONTRACT COUNT.** Measured 2026-09-15 on a fresh clone: `main` and `with/pixi-js` run **18**, not the 19 this document has recorded since the `with/nft-identity` session. It is not a lost test. `contracts/` is byte-identical between `090b5228` and `94f85c4d`, the run lists all eighteen by name with no skips (5 `Game`, 6 `Game delegation`, 3 behind the router, 4 `StakeSale`), and the history shows the suite going 16 -> 17 -> 18 across `ffb5c8f6`, `71bc1bd0` and `79b2e2ee` rather than 17 -> 19. So the arithmetic in the acquisition-rail and identity rows was off by one, and nothing re-ran `main`'s contract suite specifically for three sessions - including the one that wrote "every pre-change number was re-measured and every one was exactly what this document already said", which was true of everything that WAS re-measured. `with/nft-identity` and `with/all` at 21 are confirmed by running.
+
+**The lesson is the one this document keeps restating, in its cheapest form yet: a number quoted forward from a previous session is not a measurement, however many sessions have quoted it.** The two suites nobody re-ran were `main`'s contracts and `with/pixi-js`'s units, and both are the ones no session's change actually touched - which is exactly why nobody ran them, and exactly why the error survived. When a table says a suite is UNCHANGED, that is the row most worth re-running, not the least.
+
 And after `with/all` and the re-point, which are Phase 2's last two nodes and close the phase:
 
 | suite | template-commit-reveal | reveal-or-die |
 |---|---|---|
-| `contracts:test` | 19 on `main` and `with/pixi-js`, **21 on `with/nft-identity` and on `with/all`** | 14, unchanged |
+| `contracts:test` | **18** on `main` and `with/pixi-js` (corrected 2026-09-15; this document said 19 for three sessions), **21 on `with/nft-identity` and on `with/all`** | 14, unchanged |
 | `web:check` | 0 errors on all four branches | 0 errors, 0 warnings |
 | `test:unit` server | 1477 in 124 on `main`; 1483 in 125 on `with/pixi-js`; 1485 in 125 on `with/nft-identity`; **1494 in 126 on `with/all`** | 1662 in 134 -> **1674 in 136** |
 | `test:unit` client | 71 in 11 on all four | 65 in 10, unchanged |
