@@ -5,7 +5,7 @@ spec: games-on-this-foundation
 blockedBy: [the-vocabulary-rename]
 ---
 
-# Five games, five mappings, and only one of them is a standalone job
+# Four ports, four mappings, and reveal-or-die is not one of them
 
 ## Start here, from a cold context
 
@@ -20,6 +20,12 @@ git show work:work/tasks/backlog/the-vocabulary-rename.md
 template is where the tool gets its teeth and the mapping gets its shape. Check
 that first: if `grep -ri epoch web/src contracts/src` still finds anything on
 `template-commit-reveal@main`, this task is not ready.
+
+**reveal-or-die is deliberately NOT in this task**, and the reason is worth
+reading before someone puts it back: it is the one game that INHERITS the files
+being renamed, so the template's cascade rewrites them in its tree with or
+without a plan. A task that claimed it would leave that repo broken between the
+cascade and its own claim. Every other game owns its copies outright.
 
 `CONTEXT.md` cascades to every game the moment it merges, so each of them will
 hold a glossary saying `cycle` over a codebase saying `epoch`. That is recorded
@@ -37,7 +43,7 @@ project.
 
 | repo | when | notes |
 | --- | --- | --- |
-| `reveal-or-die` | **its own job, and it goes first** | already ported and current, so there is no port to fold it into. Full suites and a real e2e make it the best first customer for the tool after the template |
+| `reveal-or-die` | **NOT here: inside the template's step 3 cascade** | it inherits `game/core/{round,epoch,round-phase}.ts`, so the merge renames those whether anybody plans it or not, and leaves its own ~189 sites behind. There is no moment in between where that repo compiles, so its rename is part of the cascade commit rather than a job that could wait for this task |
 | `bomber-world` | inside D3's re-sync | contracts live in `onchain/evm/`, not `contracts/`, so the tool's paths must come from config. **Not cloned on the machine this was written on**; check before planning |
 | `conquest-v1` | inside its port | second bigint identity, own `empireID` vocabulary, resolution rules unwritten. The port is already the place its `_acquireStarSystem` defect gets fixed |
 | `catacombs` | inside its port | has no epoch clock on the web side at all, so half the client sites do not exist to rename |

@@ -84,13 +84,20 @@ A word-boundaried pass would MISS 793 of them, because the word is usually
 inside an identifier: `epochInfo` 56, `currentEpoch` 43, `epochDuration` 24,
 `EpochPolicy` 23, `EpochInfoStore` 17, `epochPolicy` 14, `EpochConfig` 12. A
 naive substring pass instead OVER-REACHES, and the counts for that are just as
-real: `foreground` 259, `background` 64, `Math.round` 35, `rounding` 14,
-`roundTo` 4.
+real: `foreground` 259, `background` 64, `Math.round` 35, `rounding` 14.
 
 So the rule is neither: split an identifier into camel, Pascal and snake PARTS
 and match a whole part. `currentEpoch` has a part `Epoch` and renames;
-`foreground` has one part and does not; `Math.round` and `drandRound` do have a
-matching part and need the allowlist.
+`foreground` and `rounding` are one part each and do not; `Math.round` and
+`drandRound` DO have a matching part and need the allowlist.
+
+**`roundTone` is the case that shows the allowlist is a judgement and not a
+filter.** It has a matching part, so the tool will offer it, and the right answer
+is to RENAME it: it is the HUD's tone for the shared interval, which is the sense
+that becomes `cycle`. An earlier draft of this task listed a `roundTo` in the
+allowlist; no such identifier exists in the tree, and the four hits were
+`roundTone` matched by a careless prefix grep. Report a part match; never decide
+it.
 - **`verify`** - no occurrence of a renamed term survives outside an allowlist,
   and no duplicate definitions were introduced (the `uniq -d` check `HANDOFF.md`
   already prescribes after every merge, which is the same hazard).
@@ -131,20 +138,24 @@ not that the tool is wrong.
 - The WIRE class names every ABI-visible site individually. At `bb3fb1bb` that
   is: `getEpoch`, the `epoch` return of `getCellsInZone`/`getCellsInZones` and
   of `advanceRound`, `InRevealPhase`, `InCommitmentPhase`, `CanStillReveal`,
-  `InvalidEpoch`, `InvalidEpochConfiguration`, the `epoch` topic on
-  `CommitmentCancelled`, `CommitmentMade`, `CommitmentRevealed`,
-  `CommitmentVoid` and `RoundAdvanced`, the `EpochPolicy` enum, and the
-  `epochPolicy` field of `Config` which is also a `linkedData` key.
-  **Solidity parameter names are part of the ABI**, so `uint64 epoch` in an
-  error or an event is a wire site and not an internal one.
+  `InvalidEpoch`, `InvalidEpochConfiguration`, the indexed `epoch` topic on all
+  FIVE events that carry one (`CommitmentMade`, `CommitmentCancelled`,
+  `CommitmentRevealed`, `CommitmentVoid`, `RoundAdvanced`), the `epoch`
+  COMPONENT of the `Commitment` and `Round` structs, the `EpochPolicy` enum, and
+  the `epochPolicy` field of `Config` which is also a `linkedData` key.
+  **Solidity parameter names and struct component names are part of the ABI**,
+  so `uint64 epoch` inside an error, an event or a struct is a wire site and not
+  an internal one. A tool that classifies only function and event NAMES will
+  under-report this class.
 - `apply` with an EMPTY mapping changes nothing. That is the run that proves the
   tool is doing the work rather than matching nothing, and it is the same ritual
   every checker in this tree has.
 - The over-reach case: a mapping of `round -> cycle` leaves `foreground` (259),
-  `background` (64), `Math.round` (35), `rounding` (14) and `roundTo` (4)
-  untouched, and renames `RoundPhase`. `Math.round` is the one that proves the
-  allowlist is real rather than decorative, because a part-matcher DOES match it
-  and `Math.cycle` is the result.
+  `background` (64) and `rounding` (14) untouched by the PART RULE alone, leaves
+  `Math.round` (35) untouched via the ALLOWLIST, and renames `RoundPhase` and
+  `roundTone` (4). `Math.round` is the one that proves the allowlist is real
+  rather than decorative, because a part-matcher does match it and `Math.cycle`
+  is the result.
 - The under-reach case: a mapping of `epoch -> cycle` renames `epochDuration`,
   `currentEpoch` and `EpochInfoStore`. A tool that only does whole words passes
   every other test here and is useless.

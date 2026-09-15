@@ -79,10 +79,20 @@ is what makes that legible; somebody who greps and finds `epoch` in a descendant
 should conclude the game has not been ported, not that the glossary is stale.
 
 **The wire names age and the client sweep does not.** `epochPolicy` is a
-`linkedData` key, `epoch` is an indexed topic on three events, and `InvalidEpoch`
-is an error clients match on. Nothing on this stack has a live deployment with
-users, so those are free to rename today and expensive later; the 1,715-site
-client sweep can follow at any pace behind this glossary.
+`linkedData` key, `epoch` is an indexed topic on **five** events, it is a
+component of the `Commitment` and `Round` structs that clients read through
+casts, and `InvalidEpoch`, `InRevealPhase`, `InCommitmentPhase` and
+`CanStillReveal` are errors matched by name - Solidity parameter and struct
+component names being part of the ABI. Nothing on this stack has a live
+deployment with users, so all of that is free to rename today and expensive
+later; the ~1,720-site client sweep can follow at any pace behind this glossary.
+
+**That argument does NOT transfer to the browser's local storage**, which is the
+second compatibility surface and the one with a stake behind it: the round is
+persisted under `__placement_round__` with an `epoch` field, and `load()`
+discards any record it cannot read. Renaming either the key or the field orphans
+a commitment in flight - lost secret, forfeited stake - with every suite green.
+The rename task owns that as a deliberate migration rather than a side effect.
 
 **Phase 3's own naming is the closest to correct and still not right.**
 `advanceRound`, `getRound`, `RoundPhase` and `_round()` used the player's word
