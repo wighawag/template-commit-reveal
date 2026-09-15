@@ -953,6 +953,18 @@ Two things that run taught, neither of which changes the conclusion:
 
 On cost, for whoever builds the cross-repo mode: the widest run compared 367 files in well under a second, so the diffing is not the expensive part - the ref plumbing is.
 
+## The vocabulary is decided, and the code has not moved yet
+
+**ADR-0001 (this repo's `work` branch, and the first ADR this repo owns) settles what the words are**, and `CONTEXT.md` at the root carries them to every game that scaffolds from here. The interval is a **cycle**, its halves are the commit and reveal phases, what a player submits is **actions**, and one player's pass through a cycle is a **submission**. `round` and `turn` are reserved for games and the framework uses neither.
+
+**The rule it produced is worth more than the words: name the MECHANISM, not the EXPERIENCE.** The mechanism is the framework's and is identical in every game; the experience is the game's and is not. This template already refuses to name the identity, the stake, the renderer and the actions, and its vocabulary now refuses in the same places. The concrete case that decided it: a duel of five rounds, each round several commit-reveal exchanges, is an ordinary game to build here, and a framework that had taken `round` would have put the collision in that author's own file.
+
+Two things this document said that the ADR corrects. `epoch`'s worst problem is not the beacon-chain collision, it is that the programmer sense of the word is a TIMESTAMP while the code uses it as an index, in expressions that hold both (`epoch = floor(timePassed / epochDuration) + 2`). And "the epoch maths appears character for character in all five contracts" was read here as evidence that the word is natural; it is not, because the five share one author, so it is one habit propagating rather than five people agreeing.
+
+**No code moved with the decision, deliberately**, and the staging is three tasks in `work/tasks/backlog/`: the tool (`rename-a-term-across-a-repo`, on jolly-roger's `tooling` branch, because six repos each rename once, months apart), this repo's four steps (`the-vocabulary-rename`, wire names first because they are the only part that ages while nothing is deployed), and the games (`vocabulary-in-the-game-repos`, which decides that a game still awaiting a port renames INSIDE the port rather than in a pass of its own).
+
+**Until each game is ported the tree holds both words**, and that is expected rather than drift: `CONTEXT.md` cascades and contracts do not, so a descendant full of `epoch` means that game has not been ported. `AGENTS.md` says so, because otherwise the first reader concludes the glossary is stale.
+
 ## What is deferred, and by whose decision
 
 Nothing in the design above is waiting on an answer. What is outstanding is deferred on purpose, and each item names the event that reopens it.
