@@ -226,7 +226,7 @@ The e2e run happens in a throwaway git worktree, and it carries the WORKING TREE
 
 ## Environment gotchas
 
-- **`pnpm` is not on PATH.** Use `~/.volta/bin/pnpm`. Bare `pnpm` fails; `corepack pnpm` also works.
+- ~~**`pnpm` is not on PATH.** Use `~/.volta/bin/pnpm`.~~ **TRUE ON ONE MACHINE AND FALSE ON ANOTHER, as of 2026-09-15.** On the NixOS host this project is now worked on, `pnpm` IS on PATH (`/run/current-system/sw/bin/pnpm`, 10.28.1, node v24.19.0) and `~/.volta` does not exist at all - the first command of that session died on the absolute path this line prescribes. The instruction that is true on both: **run `pnpm --version`, and if it fails look for `~/.volta/bin/pnpm`.** An absolute path in a handoff is a fact about a machine wearing the clothes of a fact about the project. See `work/notes/observations/the-machine-changed-and-two-handoff-facts-are-false-on-it.md`, which also records that **bomber-world is not cloned on that host at all** (D3 and D8 cannot start until it is) and that pnpm 10.28 now IGNORES the `pnpm.overrides` field every repo in this tree carries.
 - **Check ports before e2e.** A dev chain of the user's often runs on 8545. Run
   e2e with `E2E_RPC_PORT=8555` so it starts its own node instead of reusing and
   polluting theirs. `scripts/run-e2e-tests.sh` silently reuses whatever is on
