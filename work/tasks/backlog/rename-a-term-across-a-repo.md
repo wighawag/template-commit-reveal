@@ -92,12 +92,25 @@ and match a whole part. `currentEpoch` has a part `Epoch` and renames;
 `drandRound` DO have a matching part and need the allowlist.
 
 **`roundTone` is the case that shows the allowlist is a judgement and not a
-filter.** It has a matching part, so the tool will offer it, and the right answer
-is to RENAME it: it is the HUD's tone for the shared interval, which is the sense
-that becomes `cycle`. An earlier draft of this task listed a `roundTo` in the
-allowlist; no such identifier exists in the tree, and the four hits were
-`roundTone` matched by a careless prefix grep. Report a part match; never decide
-it.
+filter, and it is a better example than this task first realised, because this
+task GOT IT WRONG.** It has a matching part, so the tool will offer it. This
+section used to say the right answer was to rename it, on the grounds that it is
+the HUD's tone for the shared interval. It is not: it is assigned beside
+`roundLabel` from one call to `describeRound`, which takes the PER-PLAYER
+`RoundState`, so it belongs to the sense that becomes `submission` and not the
+one that becomes `cycle`. Step 2 landed with it deliberately left behind; see
+`the-vocabulary-rename.md`.
+
+So the lesson is sharper than the one originally drawn. **Two documents, written
+by someone who had read the file, both classified this site wrongly, and the
+only thing that caught it was a human reading the call site.** That is precisely
+why `report` groups by FILE and stops: a tool confident enough to classify would
+have been confidently wrong here, and so was the prose. Report a part match;
+never decide it.
+
+An earlier draft of this task also listed a `roundTo` in the allowlist; no such
+identifier exists in the tree, and the four hits were `roundTone` matched by a
+careless prefix grep.
 - **`verify`** - no occurrence of a renamed term survives outside an allowlist,
   and no duplicate definitions were introduced (the `uniq -d` check `HANDOFF.md`
   already prescribes after every merge, which is the same hazard).
@@ -152,10 +165,11 @@ not that the tool is wrong.
   every checker in this tree has.
 - The over-reach case: a mapping of `round -> cycle` leaves `foreground` (259),
   `background` (64) and `rounding` (14) untouched by the PART RULE alone, leaves
-  `Math.round` (35) untouched via the ALLOWLIST, and renames `RoundPhase` and
-  `roundTone` (4). `Math.round` is the one that proves the allowlist is real
-  rather than decorative, because a part-matcher does match it and `Math.cycle`
-  is the result.
+  `Math.round` (35) untouched via the ALLOWLIST, and renames `RoundPhase`. It
+  also OFFERS `roundTone` (4), which a human must then decline, because that
+  site is the per-player sense; see the note above. `Math.round` is the one that
+  proves the allowlist is real rather than decorative, because a part-matcher
+  does match it and `Math.cycle` is the result.
 - The under-reach case: a mapping of `epoch -> cycle` renames `epochDuration`,
   `currentEpoch` and `EpochInfoStore`. A tool that only does whole words passes
   every other test here and is useless.

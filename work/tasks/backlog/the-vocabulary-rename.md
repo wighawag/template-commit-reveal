@@ -52,9 +52,9 @@ nor the unit suite can see a mismatch.
 | step | what | scale, measured at `bb3fb1bb` | blocked by |
 | --- | --- | --- | --- |
 | 1 | the WIRE **and every reader of it**, source AND tests | ~20 contract sites + 3 client sites + 3 test/e2e sites | nothing |
-| 2 | the SHARED-INTERVAL surface: `_round()`, `getRound`, `advanceRound`, `RoundAdvanced`, `RoundReading`, `predictRound`, `createRoundReader`, `readRound`, **and `round-phase.ts` entire** (`RoundPhase`, `roundPhaseOf`, and `roundTone` in the HUD) | **66 occurrences in 10 files**, plus `round-phase.ts` and its consumers | step 1 |
+| 2 | the SHARED-INTERVAL surface: `_round()`, `getRound`, `advanceRound`, `RoundAdvanced`, `RoundReading`, `predictRound`, `createRoundReader`, `readRound`, **and `round-phase.ts` entire** (`RoundPhase` and `roundPhaseOf`) | **66 occurrences in 10 files**, plus `round-phase.ts` and its consumers | step 1 |
 | 3 | the `epoch` sweep: identifiers, comments and docs, contract and client, **including the cascade into reveal-or-die's own sites** | **1,720 occurrences in 73 files** per node, plus **189 in 26** in reveal-or-die | the tool |
-| 4 | `RoundStore` -> `SubmissionStore` and the rest of the per-player sense, **including the persisted record** | **148 occurrences in 22 files** here | step 3 |
+| 4 | `RoundStore` -> `SubmissionStore` and the rest of the per-player sense, **including `roundLabel`/`roundTone` and the persisted record** | **148 occurrences in 22 files** here | step 3 |
 
 The commands that produced those figures are in the tool's task, under
 Acceptance. Re-measure before starting: a mismatch means the tree moved, not
@@ -160,9 +160,34 @@ to a browser's local storage, which is a developer's browser too.
   something has drifted from ADR-0001 and that is a finding, not an edit.
 - **`round-phase.ts` is step 2's, not step 4's.** `RoundPhase` and
   `roundPhaseOf` are the SHARED interval's phase, so they become `CyclePhase`
-  and `cyclePhaseOf`; only the per-player sense waits for step 4. `roundTone` in
-  the HUD (`placement/ui/hud.ts`, `GameHud.svelte`) is the same shared sense and
-  goes with them - it is not an allowlist entry, it is a rename.
+  and `cyclePhaseOf`; only the per-player sense waits for step 4.
+
+- **`roundTone` is STEP 4's, and this document said the opposite until step 2
+  landed.** It said `roundTone` in the HUD was the same shared sense and went
+  with `RoundPhase`. That is false about this tree, and the builder who refused
+  it was right. `roundTone` is assigned at `placement/ui/hud.ts:485` beside
+  `roundLabel` at `:484`, both from ONE call to `describeRound($round)`;
+  `describeRound` takes `RoundState` from `game/core/round.ts`, which is the
+  per-player round, and every string it produces is one player's own submission
+  ("Committed. Reveal is owed this epoch."). `tone`'s type is literally
+  `HudModel['roundTone']`, so the two are one thing with two projections. The
+  HUD already draws the shared interval separately, as `phaseLabel` from
+  `phaseLabelOf(phase: CyclePhase)`.
+
+  **The tell was in this document's own list: it named `roundTone` and not
+  `roundLabel`.** There is no reading of this tree in which one half of a pair
+  produced by a single call is the shared interval and the other half is not.
+  Renaming it in step 2 would have left `cycleTone` beside a future
+  `submissionLabel`, from one line of code, which is the one-word-two-senses
+  failure this staging exists to prevent. Both go to step 4, as
+  `submissionTone` and `submissionLabel`.
+
+  The likely origin of the error is that `roundTone` sits a few lines from
+  `RoundPhase` in the same file. Every other item this document named for step 2
+  checked out exactly, and step 2 additionally found three the document did NOT
+  name (`holdBoardUntilRoundEnds`, `holdResolvingRound`,
+  `settleBoardWhenRoundStarts`), all of which are keyed on the clock's epoch
+  rather than on any player's state, which is the test to apply.
 - **`catching-up` is a `CyclePhase` value with no glossary word.** It is the
   client's knowledge being stale rather than a phase of the cycle. Leave it
   named as it is and raise it as a note if it bothers you; do not invent a term
@@ -192,8 +217,9 @@ inside a 1,700-site diff is how it stops being reviewable.
   green at exactly the same number.
 - If the tool was built, `rename-term.sh verify` reports no stragglers with an
   allowlist of `Math.round` and `drandRound`. `foreground`, `background` and
-  `rounding` need no entry under the identifier-part rule, and `roundTone` is a
-  rename rather than an exception. If the tool was declined after steps 1 and 2,
+  `rounding` need no entry under the identifier-part rule, and `roundTone` is
+  neither an exception nor a step-2 rename: it is step 4's, for the reason under
+  "What is already true". If the tool was declined after steps 1 and 2,
   this clause is satisfied by the two `grep` audits below instead.
 - `grep -ri epoch web/src contracts/src` returns nothing on `main` after step 3.
   Not `-w`: the word lives inside identifiers 793 times, and a word-boundaried
