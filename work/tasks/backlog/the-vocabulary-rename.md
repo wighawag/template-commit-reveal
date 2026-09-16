@@ -126,27 +126,58 @@ combination, because the cascade merges them one node at a time.
 - **`timeInCurrentEpochCycle` already exists** and becomes `timeInCurrentCycle`,
   which is the small piece of evidence that the word was always the right one.
 
-## The persisted record is a COMPATIBILITY SURFACE, and step 4 owns it
+## The persisted record: rename it outright, and keep the RULE rather than a migration
 
-**This is the one place where "not one line of logic moves" is false, and it
-costs a stake.** `web/src/lib/placement/storage.ts` writes the round under
-`__placement_round__` (:16) with an `epoch` field (:19, :74, :89), and `load()`
-refuses any record whose `epoch` is not a number (:67). So:
+**THIS SECTION USED TO PRESCRIBE A MIGRATING READ. It was wrong, and it was
+wrong about a fact rather than about a judgement**, so it is corrected here
+rather than argued with. It said that renaming `__placement_round__` or its
+`epoch` field would orphan a commitment in flight and cost a player their stake,
+and that step 4 should therefore accept the old shape, write the new, and drop
+the tolerance a release later.
 
-- step 3 renaming the FIELD, or step 4 renaming the KEY, makes every record
-  written by the previous build unreadable;
-- `load()` then discards it, which means a player with a commitment in flight
-  loses the secret that opens it, and the stake with it;
-- **every suite stays green**, because the tests are renamed alongside the code
-  and there is no test that reads an old record.
+**There is no record to migrate, and there never was.** Measured rather than
+assumed, 2026-09-16:
 
-That is exactly the failure this template exists to prevent, arriving inside a
-change advertised as behaviour-free. Decide it deliberately, in step 4, and write
-the decision at the line. The default should be a MIGRATING read - accept the
-old shape, write the new, and delete the tolerance a release later - because a
-template ships to games that will have users even though this repo does not.
-"Nothing is deployed yet" is an argument about the ABI and it does not transfer
-to a browser's local storage, which is a developer's browser too.
+- `git ls-files contracts/deployments` in this repo is **empty**. Nothing is
+  deployed, so nothing can be in flight, and the only records on disk are the
+  throwaway `localhost` chain a developer's last deploy left behind.
+- reveal-or-die's one committed deployment, `rise-testnet`, was last touched
+  2026-08-26 and its ABI still exposes `commit`, `cancelCommit` and `deposit`,
+  which its source no longer has. Today's build does not talk to it. The key is
+  `chainID_gameAddress_avatarID`, so a redeploy gives a different address and
+  therefore a different key regardless of what the field is called.
+- **The "a template ships to games that will have users" argument does not
+  survive contact either**, which is the part that looked strongest. A game
+  built from this template starts at its own first deploy; it can never hold a
+  record written by a previous build OF THE TEMPLATE, because there was no
+  previous build of that game. A migrating read here is tolerance for a shape no
+  instance has ever written, in a code path no test can exercise honestly.
+
+So **step 4 renames the key and the field outright**, and deletes the exception
+step 3 left behind in `web/src/lib/placement/storage.ts` and in reveal-or-die's
+`web/src/lib/world/storage.ts`. After it, the acceptance grep permits two files
+and neither is a compatibility surface: the UNIX epoch in jolly-roger's
+`core/transaction/in-flight.ts`, and the bomber-world citation in
+`UsingGameInternal.sol`.
+
+**What survives is the LESSON, and it is worth more than the tolerance was.**
+The observation underneath the wrong prescription is true and general:
+
+> Renaming a persisted KEY or FIELD is a silent stake-loser. `load()` discards
+> any record it cannot read, so a player with a commitment in flight loses the
+> secret that opens it; and **every suite stays green**, because the tests are
+> renamed alongside the code and nothing reads a record written by an older
+> build.
+
+That is a rule for a game that HAS users, so it belongs next to the code and in
+`AGENTS.md` beside the two commit-reveal rules, not as dead compatibility code in
+a template nobody has deployed. Step 4 puts it there.
+
+**The general form, for the next time this comes up:** "nothing is deployed yet"
+is a claim that can be CHECKED, in one command, per repo. Check it before
+building compatibility for it. This document asserted the opposite for local
+storage on the strength of a phrase ("a developer's browser too") and cost step 3
+two comment blocks and a third entry in its acceptance grep.
 
 ## What else the rename owns, so it is not left half-done
 
@@ -221,9 +252,25 @@ inside a 1,700-site diff is how it stops being reviewable.
   neither an exception nor a step-2 rename: it is step 4's, for the reason under
   "What is already true". If the tool was declined after steps 1 and 2,
   this clause is satisfied by the two `grep` audits below instead.
-- `grep -ri epoch web/src contracts/src` returns nothing on `main` after step 3.
-  Not `-w`: the word lives inside identifiers 793 times, and a word-boundaried
-  audit would report success over `epochDuration`.
+- `grep -ri epoch web/src contracts/src` returns THREE files on `main` after
+  step 3 and TWO after step 4, and no others. Not `-w`: the word lives inside
+  identifiers 793 times, and a word-boundaried audit would report success over
+  `epochDuration`. This clause asked for nothing, and nothing was the wrong
+  target; the survivors are deliberate and each was found by doing the work:
+
+  - `web/src/lib/core/transaction/in-flight.ts` says `ms since epoch` and means
+    the UNIX epoch, which ADR-0001 cites as the reason to drop the word rather
+    than an instance of it. It is also jolly-roger's file and byte-identical to
+    the stem, so editing it to satisfy a grep diverges a shared file and buys a
+    conflict in every future merge. Step 3's sweep rewrote it to "ms since
+    cycle", which is false about a `Date.now()`, and it was reverted.
+  - `contracts/src/game/internal/UsingGameInternal.sol` cites bomber-world's
+    `_epoch()`. That is a DESCENDANT'S symbol name, and by this tree's own rule a
+    game repo is expected to still say `epoch` until it is ported, so an accurate
+    citation must spell it. The sweep renamed it into a function that exists in
+    no repo.
+  - `web/src/lib/placement/storage.ts`, **after step 3 only**. Step 4 removes it;
+    see the persisted-record section above for why there was nothing to migrate.
 - `check-shared-divergence.sh` per branch with its own list, plus the empty run,
   matching the sets this plan records: 1 for `with/pixi-js`, 12 for
   `with/nft-identity`, 13 for `with/all`.
