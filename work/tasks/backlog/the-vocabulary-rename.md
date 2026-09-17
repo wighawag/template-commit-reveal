@@ -284,10 +284,42 @@ inside a 1,700-site diff is how it stops being reviewable.
 
 ## Checked by mutation, not just green
 
-A rename has no behaviour to mutate, so the mutation here is the tool's:
-**re-run step 3's mapping on the already-renamed tree and confirm it is a
-no-op.** A second application that changes anything means a mapping entry is
-matching its own output, which is how `cycleNumberNumber` gets committed.
+A rename has no behaviour to mutate, so the mutation here is the tool's.
 
-Second: take one file the sweep touched, revert it to the old vocabulary, and
-confirm `verify` names it. A verifier nobody has seen fail is not a verifier.
+**THE FIRST CHECK BELOW WAS UNSATISFIABLE AS WRITTEN, and all four steps are
+done, so this records what replaced it.** It said: re-run the mapping on the
+already-renamed tree and confirm it is a no-op; a second application that
+changes anything means an entry is matching its own output, which is how
+`cycleNumberNumber` gets committed.
+
+The INTENT is exactly right and the CHECK cannot pass. A second run re-hits
+every site the sweep deliberately left alone, because an exception is a
+judgement and no mapping file encodes one. Step 3 found this with a single file
+(`placement/storage.ts`, then the persisted-record exception); step 4 found it
+with seven, including two e2e locators, a historical `RoundPhase` reference and
+a drand round. A sweep with judgement-based exceptions can never reach a
+fixpoint, so "confirm it is a no-op" asks for something that is false whenever
+the work was done well.
+
+Two checks that DO have teeth, and the first would have caught this tree's
+actual bug:
+
+- **Assert statically that no mapping entry matches any other entry's OUTPUT**,
+  and that no allowlist entry matches as a substring of any pattern or
+  replacement under the identifier-part rule. This needs no tree and takes
+  milliseconds. It is what would have caught `roundTo` in the allowlist matching
+  inside `roundTone` and silently protecting it - a bug the sibling tool task
+  already RECORDS, and which step 4's sweep then reproduced verbatim before
+  catching it by hand.
+- **Assert that a second run touches the EXCEPTION LIST and nothing else, in
+  both directions.** Keep the exceptions as data (path, line, the phrase, the
+  reason) rather than in a human's head. A changed line that is not on the list
+  is a straggler; an exception that stops being hit is one somebody already
+  reverted. That converts "is it a no-op" into "is the set of things judgement
+  protects exactly the set we wrote down", which is the property actually
+  wanted, and it is what turns the exceptions from folklore into something a
+  later sweep cannot silently undo.
+
+The second check is unchanged and did its job: take one file the sweep touched,
+revert it to the old vocabulary, and confirm `verify` names it. A verifier
+nobody has seen fail is not a verifier.

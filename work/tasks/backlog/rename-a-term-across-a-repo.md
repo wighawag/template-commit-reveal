@@ -197,3 +197,76 @@ while the mutation sat uncommitted in the working tree.
 So: every acceptance line above is a command to run, and the empty-mapping and
 `foreground` cases are the two that matter. A rename tool that cannot fail is
 worse than no rename tool, because it will be trusted on a repo nobody re-reads.
+
+## What the first consumer learned, having done all four steps BY HAND
+
+**`the-vocabulary-rename` is finished and this tool was never built**, which was
+allowed ("if the tool was declined after steps 1 and 2, this clause is satisfied
+by the two `grep` audits instead"). That is not a verdict against building it: it
+is five more repos of evidence about what it would have to do, gathered at the
+cost of doing the work without it. Everything here is measured rather than
+predicted.
+
+**The classification is the whole job, and it is worse than this task assumed.**
+The task already says "the risk is the decision per SITE, not the edit". Four
+steps say the same thing three levels deeper:
+
+- **Two documents, written by someone who had read the file, classified a site
+  wrongly** (`roundTone`, which this task used as its worked example and got
+  backwards). Only a human reading the CALL SITE caught it.
+- **The plan's own named list was a FLOOR, not a ceiling, in every step.** Step 2
+  found three shared-interval names the plan did not list; step 4 found ~25 more
+  in prose. A tool that renames only what a mapping names will leave a tree
+  holding two words for one thing, and the report is what has to prevent that.
+- **PROSE matters as much as identifiers, and splits by sense the same way.** A
+  file whose comments say `round` above an identifier saying `cycle` is the same
+  defect as two identifiers. Worse, step 4 met one sentence carrying BOTH senses
+  and had to split it in half.
+
+**Three failure shapes no part-matcher can see, all met for real:**
+
+1. **An English idiom broken across a line.** "the other way round" with `round`
+   at the start of the continuation line. No word-boundary rule sees it; it was
+   caught by a reviewer reading prose. reveal-or-die had two more ("no RPC round
+   / trip", "WALLET ROUND / TRIP") which survived only because that sweep was
+   line-based.
+2. **Code inside a comment.** NatSpec's `@return cycle` is a PARAMETER NAME, so a
+   lexer that calls the whole comment prose renames it and solc rejects the file.
+   That one at least fails loudly.
+3. **A regex literal treated as code.** `/you missed the reveal for epoch/i`
+   became `.../for cycleNumber/i` against a HUD rendering "for cycle N". Nothing
+   type-checks `web/e2e`, so it was green everywhere.
+
+**The allowlist is where this task's own example bit.** `roundTo` was put in a
+guard list and matched inside `roundTone`, silently protecting it - which is the
+bug this task ALREADY RECORDS at the top, reproduced by someone who had read the
+record. So `verify` must assert statically that no allowlist entry matches as a
+substring of any pattern or replacement, and that no entry matches another
+entry's output. That check needs no tree and takes milliseconds.
+
+**And `apply --twice` cannot be a no-op**, which is the acceptance the consumer
+task had to correct. Every deliberate exception comes back on the second run.
+The check with teeth is that the second run touches the EXCEPTION LIST and
+nothing else, in both directions, which means the exceptions have to be data the
+tool holds rather than judgements in a person's head.
+
+**Three things a tool must NOT do, each of which cost this tree real time:**
+
+- **Never touch a file byte-identical to the stem's.** A one-word comment edit in
+  `core/transaction/in-flight.ts` diverged a shared file over the UNIX epoch,
+  which was not even the word being renamed. `report` should mark stem-identical
+  files and `apply` should skip them by default.
+- **Never rename a name matched against an ABI the repo does not own.** A
+  descendant's client reads its own contracts by name through strings, casts and
+  event-topic KEYS; viem treats an unrecognised key as an unfiltered query rather
+  than an error.
+- **Never rename a serialised name without being told it is free.** The check is
+  one command per repo (`git ls-files contracts/deployments`), and the answer
+  differs between the template and reveal-or-die.
+
+**The honest summary for whoever picks this up:** four steps by hand cost roughly
+a day and produced a correct result, and every single thing that went wrong was
+caught by a human reading a diff or a reviewer reading a call site - never by a
+gate. That is an argument for building the REPORT and the VERIFY halves, which
+make reading cheap and make the exceptions durable, and against ever letting
+`apply` decide anything.
