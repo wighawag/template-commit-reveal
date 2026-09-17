@@ -7,6 +7,84 @@ blockedBy: []
 
 # Two bounds, not one, and they answer different questions
 
+> **BUILT, 2026-09-17.** `32a3033c` on `main`, cascaded to `with/nft-identity`
+> (`b5af7040`, then `5bb21864` for the budget), `with/pixi-js` (`5e9d51fd`) and
+> `with/all` (`c2885cea` + `c7fe9d89`), and merged into reveal-or-die at
+> `d3e8961`, which inherits the FRAMEWORK half only - its contracts are its own
+> and still take one array, which the AGENTS.md paragraph added in `0e8bf5f6`
+> now says how to read.
+>
+> **The chunk is built, the turn cap is not, and the cap was never this task's.**
+> `MAX_NUM_PLACEMENTS_PER_HASH` is gone and `Config.actionsPerReveal` replaces
+> it: a deployment parameter, named in the framework's word, read by the client
+> off `linkedData`. `reveal` takes `bytes24 furtherActions`, a non-final chunk
+> must be exactly full, and - added beyond the ported design - NO chunk may
+> exceed the configured number, because a final chunk of any length would give
+> back the calculable worst case for the last transaction of every turn.
+>
+> **THREE THINGS THIS TASK GOT WRONG ABOUT THIS REPO, and the first is the one
+> with the stake in it.**
+>
+> 1. **`acknowledgeMissedReveal` does NOT walk the chain here, and must not.**
+>    The task called this the centre of the work and it is the one instruction
+>    that was refused. The hazard named is real - a partially revealed
+>    commitment that cannot be closed blocks that player forever - and the
+>    remedy is wrong for this framework. Stratagems walks the chain because its
+>    penalty is computed FROM the revealed moves; here the penalty is the bond,
+>    the bond falls by each chunk's cost as it lands, and what is outstanding is
+>    already on chain. So one call with nothing but the identity settles a turn
+>    however far it got, and requiring the secret would have made settling
+>    depend on the very thing that failed. Pinned by "settles a half-revealed
+>    turn in ONE call, and frees the next cycle", and the mutation that was run
+>    instead of the task's: leave a half-revealed commitment open and that test
+>    fails. **A game whose forfeit is per action rather than per bond has to
+>    revisit it**, which is said at the function.
+> 2. **The hazard the task was pointing at exists here in a DIFFERENT place, and
+>    it is the tally.** `_recordReveal` must fire only on the chunk that closes
+>    the chain. Count a partial reveal and unanimity can close the cycle while a
+>    player still owes chunks, which strands them: half a turn applied and the
+>    rest lost, by somebody else's advance. That is the analogue of the
+>    unsettleable commitment, and it is what "will not let the cycle close on a
+>    half-revealed turn" pins.
+> 3. **`_checkHash` takes ONE encoding, not two.** The ported design drops the
+>    trailing field on the final chunk. Both are sound against forgery; the
+>    single form removes a second encoding selected by a branch on the very
+>    value that distinguishes the last chunk, which is a second chance to get
+>    wrong the one thing that costs a player money. Nothing is deployed, so the
+>    compatibility argument for two forms buys nothing here.
+>
+> **ONE ACCEPTANCE BULLET IS DELIBERATELY NOT MET.** `COMMIT_GAS` and
+> `REVEAL_GAS` are re-measured as true maxima of one transaction (150,000 and
+> 600,000 against measurements of 116,898 and 535,561 at four per reveal) and
+> `creditsGasMultiplier` is their sum, so one credit is one commit plus one
+> reveal STEP. They are NOT passed as gas limits. A limit that is too low is not
+> a slow turn, it is a missed reveal; these numbers are measured against THIS
+> game's contracts; contracts are not inherited in this tree, so a descendant
+> runs code they were never measured against while inheriting the file
+> unchanged. `with/nft-identity` proved that within the cascade: the same two
+> transactions measure 99,102 and 374,085 there. Sizing a reservation that way
+> is safe and imposing a ceiling that way is not, so the flip belongs to the
+> credits task, with a per-deployment number and a test that fails when a
+> contract change outgrows it.
+>
+> **The chunk size is four, and the argument differs per branch even though the
+> number does not.** On `main` four is chosen to be EXERCISED: a turn there is
+> bounded economically at ten placements, so sixteen or thirty-two would mean no
+> turn anybody can make ever chains. On the identity branches a placement costs
+> nothing, so this parameter is the ONLY bound a reveal has - and a consequence
+> the task did not raise falls out of that: a turn there is unbounded, so the
+> number of reveals it takes is unbounded, and a long enough turn cannot fit in
+> any reveal window. Nothing enforces that yet. It is recorded in
+> `contracts/rocketh/config.ts` on those branches and it is the next thing
+> somebody should want.
+>
+> Counts: contracts 36 -> 45 on `main` and `with/pixi-js`, 38 -> 47 on
+> `with/nft-identity` and `with/all`, 13 unchanged in reveal-or-die (its
+> contracts did not change). Web units 1496 -> 1512 on `main`, 1505 -> 1521,
+> 1504 -> 1520, 1513 -> 1529, and 1693 -> 1695 in reveal-or-die; client 71
+> everywhere, 65 in reveal-or-die. e2e 51 -> 52 on every template node and 50
+> unchanged in reveal-or-die, every run green.
+
 ## Start here, from a cold context
 
 ```sh

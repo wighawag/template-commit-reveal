@@ -8,6 +8,22 @@ relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 0, the verify
 
 # `pnpm check` does not look at the e2e suite, and `verify` is `check` plus the units
 
+> **Fifth instance, 2026-09-17, cascading the chunked reveal.** The new e2e test
+> asserts each planned cell's reported figure grew by `placementCost`. On
+> `main` that is right. On `with/nft-identity` and `with/all` a placement costs
+> nothing, and `stakeOnCell` there returns the CLAIMANT COUNT rather than a
+> stake - so the inherited line asserted that the board had NOT changed, on the
+> one test whose whole point is that it did. It merged cleanly, `check` was
+> clean, and 1,520 unit tests passed.
+>
+> Two things about this instance are worth more than the count. It is the first
+> one whose assertion would have INVERTED rather than failed to compile, so
+> nothing mechanical could have caught it even with a type-checker over the
+> directory: both sides are `bigint`. And it was found by GREPPING the merged
+> file for every reflected path and asserted quantity before running anything,
+> which is the practice the handoff already prescribes and which is, on this
+> evidence, the only thing that works.
+
 Found while backporting reveal-or-die's `contracts-page.ts` fixture: the move
 broke an import in `e2e/tests/escape-hatch.e2e.ts` (it imported `writeForm` and
 `executeButton` from `stalling-wallet.ts`, which no longer exported them) and

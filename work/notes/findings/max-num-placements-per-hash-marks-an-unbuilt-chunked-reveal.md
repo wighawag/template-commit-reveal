@@ -1,13 +1,46 @@
 ---
 title: MAX_NUM_PLACEMENTS_PER_HASH is not a turn cap, it is the marker of an unbuilt chunked reveal, and without it a zero placementCost leaves a reveal unbounded
 type: finding
-status: OPEN
+status: RESOLVED
 spotted: 2026-09-17
 corrected: 2026-09-17, same day, before anything was built on it
 relates-to: work/specs/proposed/games-on-this-foundation.md (D2, with/nft-identity), contracts/src/game/internal/UsingGameStore.sol, stratagems contracts/src/game/routes/StratagemsReveal.sol
 ---
 
 # The constant means PER HASH, and the template never built the thing that makes a hash a chunk
+
+> **BUILT AND CLOSED, 2026-09-17** (`32a3033c`, cascaded to every node; the task
+> is `work/tasks/done/a-turn-bigger-than-a-transaction.md` and carries the full
+> record). The constant is gone, `Config.actionsPerReveal` replaces it, and both
+> halves this note said had to be built exist - with one correction it is worth
+> reading before trusting the sentence below.
+>
+> **"Anyone building this here must build both halves, or a partially revealed
+> turn becomes unsettleable" is right about the hazard and wrong about the
+> remedy, in this framework.** `acknowledgeMissedReveal` here forfeits the BOND
+> and takes no actions, and the bond falls by each chunk's cost as it lands, so
+> one call closes a turn however far the chain got - nothing is needed from the
+> caller, and requiring the secret would have made settling depend on the very
+> thing that failed. Stratagems has to walk the chain because its penalty is
+> computed from the moves; that is a property of its penalty, not of chaining.
+>
+> The hazard is real and it lands one place over: the cycle's TALLY. Counting a
+> partial reveal as a revealed turn lets unanimity close the cycle while a
+> player still owes chunks, and those chunks are then unrevealable. Both are
+> pinned by tests and both were confirmed by mutation.
+>
+> **The measurement about `with/nft-identity` was the load-bearing part of this
+> note and it held.** Nothing bounded a reveal there, because `placementCost` is
+> zero; `actionsPerReveal` is now the only bound, and the note's per-zone-index
+> concern is exactly what it bounds. What is still unbounded there is the TURN,
+> and therefore the number of reveals it takes, which no clock can accommodate;
+> that is recorded at the deploy config on those branches as the next thing to
+> want.
+>
+> Of the three options this note laid out, **2 was taken** and the reason is the
+> one it gave: the transaction is bounded structurally, in every game and on
+> every chain, regardless of stake model. Option 3 was not needed. Credits are
+> now priced per STEP rather than per turn.
 
 ## THE CORRECTION FIRST, because the first version of this note was wrong
 
