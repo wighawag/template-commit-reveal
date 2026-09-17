@@ -12,15 +12,43 @@ takes `moves`, a secret and a `furtherMoves`, and walks the same chain with the
 same full-chunk rule. **We do not.** `acknowledgeMissedReveal(player)` takes the
 identity and nothing else, and closes a commitment however far the chain got.
 
-**The rule that produced it: a penalty computed from what was revealed must be
-shown what was revealed; a penalty fixed at commit time must not be.** Which one
-a game has is a property of its stake, not of its chaining.
+**The rule that produced it: a settlement needs the chunks exactly when it cannot
+otherwise know what to KEEP and what to RETURN.** Which is the case is a property
+of a game's stake, not of its chaining.
 
 Here the penalty is the bond, set when the commitment was made, and `_reveal`
 decrements it by each chunk's cost as that chunk lands. So the contract already
 holds the figure the settlement needs: what is left earmarked is exactly what
 was never opened. Nothing the caller could supply would tell it anything it does
 not know.
+
+**TWO INDEPENDENT THINGS PUT A GAME IN THE OTHER CASE, and the first version of
+this ADR named only one.** Stratagems has both, which is why it is the worked
+example either way.
+
+1. **A penalty computed FROM the actions.** Stratagems burns reserve per move
+   revealed, so it cannot know what to take without being shown them. This was
+   the reason originally given, and on its own it reads as an accounting quirk.
+2. **A bond deliberately LARGER than what the turn will cost**, which is a
+   HIDING requirement and is the more general of the two. The bond is public: it
+   is carried by `CommitmentMade` and returned by `getCommitment`. So a bond
+   equal to the exact cost tells every observer how many actions the commitment
+   hides, before anybody reveals anything - which in a game where the count is
+   part of the move is most of the secret. A game that cares posts more than it
+   needs, and the settlement then cannot tell the surplus from the stake:
+   forfeiting the remainder punishes the HIDING rather than the silence, and
+   punishes it hardest on whoever hid best. Such a game must accept the chunks,
+   so that what was actually committed can be established and the surplus
+   returned.
+
+**SO "ONE CALL IS ENOUGH" IS A PROPERTY OF THIS GAME'S BOND AND NOT OF THE
+FRAMEWORK**, and that is the sentence to carry away. The reference game's client
+bonds the exact cost of the plan, which is what makes the simple settlement
+correct - and which means its bond leaks the length of its turns. That leak is
+real and is recorded where the bond is decided rather than treated as a benefit;
+closing it moves the game into case 2, and the settlement has to move with it.
+The two halves cannot be changed independently, which is the only thing here that
+would be expensive to discover later.
 
 ## Considered options
 
@@ -53,10 +81,10 @@ mean the same thing.
 
 ## Consequences
 
-**A game that forfeits per ACTION has to revisit this**, and that is said at
-`_acknowledgeMissedReveal` rather than only here. If a game's `_forfeit` burns
-per revealed action, the contract no longer knows what is outstanding and the
-settlement needs the chunks after all.
+**A game that forfeits per ACTION, or that over-posts to hide its turn length,
+has to revisit this**, and both are said at `_acknowledgeMissedReveal` rather
+than only here. In either case the contract no longer knows what is outstanding
+and the settlement needs the chunks after all.
 
 **An INDIVISIBLE stake makes the forfeit all-or-nothing however far the chain
 got**, which is not a defect of this decision but is worth knowing before

@@ -39,6 +39,20 @@ blockedBy: []
 >    instead of the task's: leave a half-revealed commitment open and that test
 >    fails. **A game whose forfeit is per action rather than per bond has to
 >    revisit it**, which is said at the function.
+> 1b. **AND THE RULE THAT REPLACES IT IS BROADER THAN THE FIRST WRITE-UP SAID.**
+>    A settlement needs the chunks exactly when it cannot otherwise know what to
+>    KEEP and what to RETURN, and there are TWO ways into that, not one. The
+>    first is a penalty computed from the actions. The second, added after
+>    review, is a bond deliberately larger than the turn's cost - which is what
+>    a game posts when it does not want the PUBLIC bond to disclose how many
+>    actions are hidden, since `bond / placementCost` is the action count and
+>    `CommitmentMade` carries it. Stratagems has both. **This game's client
+>    bonds the exact cost, so it leaks the length of its turns**, and that is a
+>    real weakness rather than the reason the settlement is simple: closing it
+>    moves the game into case 2, and both halves have to move together. See
+>    `work/notes/findings/the-bond-is-public-so-bonding-the-exact-cost-leaks-the-turn.md`
+>    and ADR-0002, both corrected.
+>
 > 2. **The hazard the task was pointing at exists here in a DIFFERENT place, and
 >    it is the tally.** `_recordReveal` must fire only on the chunk that closes
 >    the chain. Count a partial reveal and unanimity can close the cycle while a
@@ -66,6 +80,28 @@ blockedBy: []
 > is safe and imposing a ceiling that way is not, so the flip belongs to the
 > credits task, with a per-deployment number and a test that fails when a
 > contract change outgrows it.
+>
+> **THE GAS NOTE NEEDS ONE MORE DISTINCTION, raised in review.** `REVEAL_GAS`
+> is a true maximum of ONE TRANSACTION and stays one in every game on every
+> chain, which is the whole property the chunk buys. What is NOT bounded is the
+> number of reveal STEPS, and wherever an action costs nothing there is no worst
+> case for a TURN at all - so anything answering "how many turns can I still
+> play" (the stipend, the credit count) has to be sized from an EXPECTATION of
+> actions per turn, named as a parameter, rather than from a maximum that does
+> not exist. The stipend is counted in STEPS today for exactly that reason,
+> which is honest and does not answer the player's question. Pricing a credit
+> PER ACTION is the exact alternative and gives up the thing credits are for.
+>
+> **AND THE REVEAL WINDOW IS SIZED AGAINST THIS CLIENT, NOT THE CHAIN**, which
+> the first write-up presented as a property of the deployment. Nonces are per
+> account and strictly sequential, so a turn's chunks could be broadcast in ONE
+> burst and would still execute in order - `k` round trips become one. The three
+> reasons they are sequential today are written at the reveal loop and none of
+> them is that a burst would not work. On the identity branches this is the only
+> thing that could ever make an unbounded turn openable, because there the cost
+> stops being round trips inside the window and becomes block space. See
+> `work/notes/observations/a-chained-reveal-could-be-one-burst-of-transactions.md`
+> for what would settle it.
 >
 > **The chunk size is four, and the argument differs per branch even though the
 > number does not.** On `main` four is chosen to be EXERCISED: a turn there is
