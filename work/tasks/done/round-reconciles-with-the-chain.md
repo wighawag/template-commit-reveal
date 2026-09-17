@@ -13,8 +13,13 @@ blockedBy: []
 > framework half and does NOT build its own recovery - that game can ENUMERATE
 > its action space, which is the interesting half and its own task. The
 > write-up is in the spec, under "D10 and the board handover are DONE".
-> Left in `ready/` rather than moved on: this session was authorised for one
-> position change, the promotion. The next person may move it to a terminal.
+> ~~Left in `ready/` rather than moved on: this session was authorised for one
+> position change, the promotion. The next person may move it to a terminal.~~
+> **Moved to `done/` 2026-09-17**, by the next person, as invited. Nothing else
+> about it changed: it was built on 2026-09-08 and the write-up in the spec is
+> still the record. The nine days it spent in `ready/` while finished are the
+> argument for making the terminal move part of the work rather than a
+> follow-up.
 
 Today a browser that has lost its local round is told nothing and loses the stake in silence. The chain holds the commitment; the client already fetches it; the client throws the fact away.
 

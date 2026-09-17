@@ -7,6 +7,26 @@ blockedBy: []
 
 # `epoch` becomes `cycle`, in four staged steps
 
+> **DONE, 2026-09-17**, all four steps, on five nodes: `main`, `with/pixi-js`,
+> `with/nft-identity`, `with/all` and reveal-or-die. Commits on `main` are
+> `31eec5da` (the wire), `14f0a41a` (the shared interval), `32e4b477` (the
+> `epoch` sweep) and `703413a5` (`submission`), plus `8a4a16f7`, which settled
+> what the reference game calls things to its PLAYERS - `turn` for one player's
+> pass, `cycle` for the interval - and is the first time `CONTEXT.md`'s
+> reservation of `round` and `turn` for games has been exercised.
+>
+> **No suite count moved at any node, at any step.** The tool was declined, as
+> this task allowed, so the acceptance was satisfied by the grep audits; the
+> evidence about what a tool would need is in `rename-a-term-across-a-repo`.
+>
+> **This document was wrong three times and each correction is inline below**,
+> marked where the claim was made rather than collected here: `roundTone` is the
+> per-player sense and not the shared interval; there was no persisted record to
+> migrate; and the idempotence check in Acceptance is unsatisfiable for a sweep
+> with judgement-based exceptions. Read those before trusting a figure in this
+> file - the scale numbers were stale too, in every step, and re-measuring was
+> the first instruction for a reason.
+
 ## Start here, from a cold context
 
 ```sh
