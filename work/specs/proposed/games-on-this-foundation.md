@@ -800,6 +800,34 @@ one argument to `waitForTransactionReceipt`. The general shape is the same one
 this section already names: the thing that looked like a property of the
 mechanism was a property of one client's configuration.
 
+**And the credits half that everything was blocked on is done, 2026-09-18.**
+`expectedActionsPerTurn` is declared by the deploy, and the stipend counts TURNS
+again rather than transactions. It is the parameter this document said was
+needed and did not name: `revealGas` bounds a transaction, nothing bounds a
+turn, so a count of turns has to be sized from a number the game states rather
+than from a maximum that does not exist. It is `4` on `main`, where a turn is
+bounded economically at ten placements for a whole stake, and `12` on the
+identity branches, where a placement is free and there was nothing to size a
+stipend from at all - which is the first parameter in this tree whose VALUE is
+argued differently per branch and whose reasoning was caught merging cleanly and
+falsely into the branch it mattered on.
+
+**It is deliberately not how credits are priced**, and that is the line to keep:
+a credit count is shown to the player as what they can still do, so it must be a
+FLOOR, and an expectation is not one. Credits stay denominated in what a
+TRANSACTION costs, which is a real bound. Only the stipend - a starting float
+with the top-up flow as its remedy - is sized from what a turn is expected to
+cost.
+
+**What remains of the credits work is the flip to gas LIMITS, and it is now one
+question rather than three.** The per-deployment figures exist (ADR-0003) and a
+test fails when the contracts outgrow them. What is not established is that the
+declared figure has enough headroom to be a CEILING rather than a reservation:
+`main` declares 600,000 against a measured 535,525, which is 12%, and the test
+only checks the figure is not exceeded. It also measures on the LOCAL chain
+while the `default` deploy data is what a real chain would use. Both are small
+and neither is done.
+
 **Phase 4: worlds.** `createContext` takes its connection as a parameter in jolly-roger (small, already designed), then an embedded world in the reference game. Acceptance: the reference game plays a full round against a chain in the tab, and the chrome names the world it is describing rather than the one it assumed.
 
 **Phase 5: the long cycle.** `with/fuzd` here, proven on a 24-hour deployment of the reference game, including C3 and C4 under an early advance. This is the mode three of the five games need and the one with the least evidence in this lineage: catacombs' fuzd plumbing is fully written and never called.
