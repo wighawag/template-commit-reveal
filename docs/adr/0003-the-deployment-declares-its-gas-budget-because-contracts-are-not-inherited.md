@@ -28,15 +28,31 @@ had already been forced to write a paragraph in that file explaining that it was
 knowingly carrying `main`'s numbers and why that was the safe direction. That
 paragraph is the smell this decision removes.
 
-## What it does not do
+## They became limits, 2026-09-18, and what that needed
 
-**They are still not passed as gas LIMITS.** This is half of what the credits
-work needs, not all of it. A limit that is too low is not a slow turn, it is a
-missed reveal, which takes the stake and blocks the next cycle until it is
-acknowledged. The other half is an explicit EXPECTATION of actions per turn,
-because a limit bounds a TRANSACTION and nothing bounds a TURN wherever an
-action is free - so "how many turns can I still play" cannot be sized from a
-maximum that does not exist. That remains open and is the credits task's.
+**Written as "still not passed as gas LIMITS", and no longer true.** The flip
+happened in the same session, once the two things blocking it existed: an
+explicit `expectedActionsPerTurn` so that anything counted in turns has a number
+to be sized from, and a minimum-headroom assertion in `GasBudget.test.ts` so the
+margin over the measured worst case is a tested property rather than an accident
+of when it was last looked at. No declared figure had to change - they already
+carried 12% to 28%, against a tripwire deliberately set looser at 10%.
+
+**One objection to the flip was mine and was wrong.** I held it back on the
+grounds that the figures are measured on the local chain while a real deployment
+uses the `default` deploy data, so a locally-measured ceiling could be too low
+elsewhere. Gas USAGE is a property of the contract code and the EVM revision,
+not of the chain, and `hardhat.config.ts` pins `evmVersion` on every profile -
+so the same contracts cost the same gas wherever they run. What genuinely varies
+per chain is the PRICE, and that is `expectedWorstGasPrice` in the chain
+properties, which is already declared per chain and is exactly what turns a gas
+figure into money. The correction came from the user, and it is the reason this
+decision's per-deployment framing is about WHICH CONTRACTS rather than which
+chain.
+
+The remaining exception is worth keeping in view rather than acting on: a chain
+that folds L1 data costs into execution gas, or one below the pinned EVM
+revision, would not satisfy that argument. Neither is in this tree today.
 
 **They are not in the Solidity `Config` struct.** `linkedData` on the deployment
 record is not the constructor's argument, and it may say more than the
