@@ -759,6 +759,47 @@ use one.
 
 **What it does NOT do is cap a turn, and the reason is a decision this plan should hold on to.** A per-identity cap only binds where identity is SCARCE: where an identity costs nothing, a player who wants more than the cap makes another account, so the cap inconveniences the honest and taxes whoever does not think of it. So the framework takes the chunk, which is a mechanism every game needs, and takes no position on the cap, which is a game rule some games cannot have. The three ways to bound a turn - the action costing something, the identity being scarce, or nothing - are a property of a game rather than a choice, and the third row is reachable by accident: **`with/nft-identity` is in it.** A placement costs nothing there and the identity is scarce, so the chunk is now the only bound on a REVEAL, and the TURN is still unbounded - which means the number of reveals it takes is unbounded and a long enough turn cannot fit in any reveal window. Nothing enforces that yet. It is recorded at that branch's deploy config and it is the next thing somebody should want.
 
+### After it: the window was the bound, and the gas budget was in the wrong repo. DONE, 2026-09-18
+
+**The chunked reveal left a ceiling nobody had measured, and it was twelve
+actions.** At the shipped local config a client revealing one chunk at a time
+landed THREE chunks before the reveal phase shut, not the two this document
+inferred from the e2e suite and not more. A sixteen-action turn committed, got
+three quarters of the way through revealing, and forfeited the stake - seven
+avatars, in the measuring harness that found it. `with/nft-identity` is where it
+bites, because a placement costs nothing there so nothing bounded a plan at all.
+
+**The binding term was the CLIENT's poll interval, not the send pattern**, which
+is the part worth carrying. The cost of one sequential chunk is
+`max(block time, poll interval)`, and the app built its `publicClient` on viem's
+4,000ms default against a 1s chain. Sizing the poll from the reveal phase takes
+the ceiling from three chunks to nine and costs nothing. The burst this document
+pointed at would take it to 104+, and it is now measured rather than argued
+(104 chunks, 416 actions, one block, 29.9M gas) - but it is DEFERRED, because it
+cannot be built without passing a gas limit, and estimating any chunk after the
+first is an estimate of a reverting call. **So the burst depends on the credits
+work rather than preceding it**, which is the reverse of the order this document
+had.
+
+**And the gas figures were in the wrong repo, which is ADR-0003.** `COMMIT_GAS`
+and `REVEAL_GAS` were constants in `web/src/lib/placement/config.ts`, a file
+INHERITED by every repo here, measured against `contracts/src`, which no repo
+inherits. This document already recorded the symptom - `with/nft-identity`
+measuring 30% lower in a file whose text does not differ - and treated it as a
+value to re-measure per branch. It was a value in the wrong place. The deploy
+declares them now, `linkedData` carries them, the client reads them, and
+`GasBudget.test.ts` fails when the contracts outgrow what the deployment claims.
+That is half of what the credits work needs; the other half, an explicit
+EXPECTATION of actions per turn, is still open and still the reason a limit
+cannot be imposed yet.
+
+**One claim of this document's was too wide and is corrected in place.** "A
+reveal phase sized for `k` sequential sends is sized against the CLIENT" is
+right, and the sentence under it treated the burst as the remedy. The remedy was
+one argument to `waitForTransactionReceipt`. The general shape is the same one
+this section already names: the thing that looked like a property of the
+mechanism was a property of one client's configuration.
+
 **Phase 4: worlds.** `createContext` takes its connection as a parameter in jolly-roger (small, already designed), then an embedded world in the reference game. Acceptance: the reference game plays a full round against a chain in the tab, and the chrome names the world it is describing rather than the one it assumed.
 
 **Phase 5: the long cycle.** `with/fuzd` here, proven on a 24-hour deployment of the reference game, including C3 and C4 under an early advance. This is the mode three of the five games need and the one with the least evidence in this lineage: catacombs' fuzd plumbing is fully written and never called.

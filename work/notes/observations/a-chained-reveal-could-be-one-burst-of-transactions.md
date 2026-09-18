@@ -2,7 +2,7 @@
 title: A chained reveal is sent one chunk at a time, and nonces mean it need not be
 type: observation
 spotted: 2026-09-17
-relates-to: web/src/lib/placement/commit-reveal.ts, contracts/rocketh/config.ts (revealPhaseDuration), with/nft-identity
+relates-to: web/src/lib/game/core/reveal-window.ts, web/src/lib/placement/commit-reveal.ts, contracts/rocketh/config.ts (revealPhaseDuration), with/nft-identity
 ---
 
 # The reveal phase is sized for N round trips, and that is a client choice
@@ -44,15 +44,78 @@ actually exists.
   ten-second reveal phase in the e2e suite, on every node, at four actions per
   reveal.
 
-## What would settle it
+## MEASURED, 2026-09-18, and the burst was not the biggest term
 
-A measurement, not an argument: sign and broadcast `k` chunks without waiting,
-against the local node and against a real testnet, and record how long the last
-one takes to land versus `k` round trips. If the burst is meaningfully faster, the
-work is bounded and known - the nonce cache handing out `k` sequential nonces,
-`send()` growing a batch shape, and the submission's progress counting landings
-rather than sends (which it already does).
+Against a local node mining on a 1s interval (never the instant-mining `test`
+network, which would make a sequential client look free), at the shipped 10s
+reveal phase and four actions per reveal. `k` is chunks; "landed" is chunks that
+actually resolved before the window shut.
 
-Until then the honest statement is the one now in both files: a reveal phase too
-short for a long turn is **two** things to weigh rather than one, and the factor
-of `k` belongs to this client rather than to the chain.
+| k | sequential @ 4000ms poll | burst | sequential @ 100ms poll |
+| --- | --- | --- | --- |
+| 1 | 4,026ms, 1/1 | 4,020ms, 1 block | 853ms, 1/1 |
+| 2 | 8,045ms, 2/2 | 4,018ms, 1 block | 1,904ms, 2/2 |
+| 4 | 12,079ms, **3/4** | 4,022ms, 1 block | 3,916ms, 4/4 |
+| 8 | 12,075ms, **3/8** | 4,024ms, 1 block | 7,951ms, 8/8 |
+| 13 | 12,076ms, **3/13** | 4,028ms, 1 block | 9,867ms, **9/13** |
+
+`with/nft-identity` reproduces every timing, and scales: 104 chunks (416
+actions) landed in ONE block, 29,888,710 gas against a 60,000,000 limit, all 104
+broadcast in 98ms.
+
+**The burst works, which was the thing actually in doubt.** Chunk `i + 1` is
+checked against a head chunk `i` writes, and 104 of them executed in nonce order
+inside a single block with every hash check passing. Nonce ordering holds WITHIN
+a block, not merely between blocks.
+
+**But the client's own poll interval was the binding term, not the send
+pattern.** The app builds its `publicClient` with no `pollingInterval`
+(`core/connection/remote.ts`), so it ran on viem's 4,000ms default, and the cost
+of one sequential chunk is `max(block time, poll interval)`. That is why only
+THREE chunks fitted a ten-second phase. Sizing the poll from the phase takes it
+to nine, costs nothing, and needs no nonce work, no batch shape and no new
+failure reporting. Done in `game/core/reveal-window.ts`.
+
+**So the burst is deferred rather than rejected**, and what it would buy is now a
+number: 9 chunks to 104+, i.e. the point where the limit stops being time and
+becomes block gas. Three things were learned that change how it would be built.
+
+- **It cannot be built without a gas LIMIT, which is the credits work.**
+  Measured directly: estimating chunk 1 succeeds (537,642 on `main`, 366,002 on
+  `with/nft-identity`); estimating chunk 2 before chunk 1 lands FAILS, because it
+  is an estimate of a reverting call. Deriving the limit from chunk 1's estimate
+  is not safe either - a chunk of four fresh cells in four new zones costs far
+  more than four warm ones. So item 1 depends on item 4, which is the reverse of
+  the order this was queued in.
+- **The failure story is worse but cheap.** A burst of 8 whose first chunk
+  carries a wrong secret: 8/8 revert in one block for 338,486 gas total, about
+  42k per doomed chunk, less than one successful chunk for all eight. So the
+  objection is about REPORTING which of `k` failed, not about cost.
+- **The harness proved the hazard on itself.** A fixed 1,500,000 gas limit was
+  under the real cost at `actionsPerReveal` 16, so every chunk burned the limit
+  and reverted out of gas. That is precisely what "a limit that is too low is a
+  missed reveal, not a slow turn" means, arriving in a measuring script.
+
+**The sentence this note used to end on was too narrow, and it was ours.** "The
+sequential version is MEASURED to fit: two chunks land inside a ten-second reveal
+phase in the e2e suite" is true and reads as a general statement. The fit was
+only ever measured at the size the suite exercises. The actual ceiling was three
+chunks - twelve actions - and nothing in the tree exercises four, which is why a
+sixteen-action turn silently costing a stake had never shown up in a suite.
+
+**What is NOT settled: a real testnet.** This is one local EDR node, no mempool
+competition, no reorgs, one sender. It answers "does the pattern work and is it
+faster" and not "how does a 104-transaction burst behave on a congested public
+chain". The EDR nonce-burn hazard is also EDR-specific, and in a burst it strands
+a whole turn rather than one transaction.
+
+**And `eth_sendRawTransactionSync` is a third route nobody has taken.**
+`contracts/rocketh/config.ts` already carries `supportsSendRawTransactionSync`
+per chain, it already reaches the client in the generated `deployments.ts`, and
+jolly-roger's `dispatch-guard.ts` already wraps the sync send variants. Nothing
+reads the flag. On a chain that supports it the poll disappears entirely and a
+send becomes one request that returns on inclusion. **It cannot be exercised
+here**: the local node answers `Method eth_sendRawTransactionSync is not
+supported`, so the 31337 entry declaring `false` is correct and honest, and
+wiring it would be untestable code in the reveal path. That is the argument for
+not doing it yet rather than an oversight.
