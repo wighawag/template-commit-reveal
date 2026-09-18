@@ -110,16 +110,42 @@ route that is not there. Earlier merges conflicted in `context/index.ts`
 instead, for the opposite reason (upstream editing a monolithic `createContext`
 this repo has split); expect either shape.
 
-**`context/index.ts` conflicts are resolved by keeping ours and then doing the
+~~**`context/index.ts` conflicts are resolved by keeping ours and then doing the
 real work by hand.** The file is three lines of composition here; upstream's is
-a 600-line `createContext`. So the conflict is never informative and the change
-inside it always is. Diff upstream's version against its own previous one
-(`git diff <old-merge-base> stem/with/local-signer -- web/src/lib/context/index.ts`)
-and port what that shows into `core.ts`. The `a345d53` merge is the worked
-example: `establishRemoteConnection` stopped returning `payment` and started
-returning `chainInfo`, with the app building the rail itself, and taking "ours"
-without reading would have left `core.ts` destructuring a property that no
-longer exists.
+a 600-line `createContext`.~~ **HALF SPENT, 2026-09-18: UPSTREAM SPLIT THE SAME
+WAY, so the two halves are no longer a fork and the advice's premise is gone.**
+jolly-roger's `context/` is now `core.ts` (1519 lines of named builders) plus
+`app.ts` plus a ~35-line `index.ts`, and its own comment says why: "this used to
+be one 570-line function" whose ORDER was load-bearing and invisible. So
+`index.ts` is a short composition on BOTH sides, `app.ts` is upstream's half of
+what this repo calls `game.ts`, and the file that actually conflicts is
+`core.ts`.
+
+**And the conflict got better rather than worse.** Because each builder names
+what it consumes, an upstream change now arrives as two or three small hunks at
+the builder that owns it instead of as one opaque block. The 2026-09-18 merge is
+the worked example: upstream made the connection a parameter, and it landed here
+as three conflicts inside `buildConnection` and one at its call site, each
+resolved by keeping both sides' parameters. `index.ts` still conflicts, and
+still trivially, because this repo says `createGameContext` where upstream says
+`createAppContext`.
+
+**What survives unchanged is the reason to READ rather than resolve.** Diff
+upstream's version against its own previous one
+(`git diff <old-merge-base> stem/with/local-signer -- web/src/lib/context/core.ts`)
+and check what it means here. The `a345d53` merge is the older worked example:
+`establishRemoteConnection` stopped returning `payment` and started returning
+`chainInfo`, with the app building the rail itself, and taking "ours" without
+reading would have left `core.ts` destructuring a property that no longer
+exists.
+
+**One resolution in that merge is a decision rather than a mechanic, so it is
+written down here.** Upstream's `index.ts` re-exports
+`{CoreServices, AppContext, AppFactory}`; this repo re-exports `CoreServices`
+alone, and the merge kept ours and added only the two new names
+(`ConnectionFactory`, `ConnectionRequest`). Taking upstream's list would have
+been the clean-hunk-wrong-reasoning shape: it re-exports two types under names
+this repo's own file calls something else.
 
 **Grep the result of a merge for DUPLICATE definitions, every time.** In
 `a345d53` the `web/e2e/fixtures/test.ts` conflict looked like a pure insertion,
