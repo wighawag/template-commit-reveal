@@ -76,9 +76,31 @@ THREE chunks fitted a ten-second phase. Sizing the poll from the phase takes it
 to nine, costs nothing, and needs no nonce work, no batch shape and no new
 failure reporting. Done in `game/core/reveal-window.ts`.
 
-**So the burst is deferred rather than rejected**, and what it would buy is now a
-number: 9 chunks to 104+, i.e. the point where the limit stops being time and
-becomes block gas. Three things were learned that change how it would be built.
+**BUILT, 2026-09-18, and not in the shape this note proposed.** The chunks are
+broadcast one after another WITHOUT waiting for each receipt, and the wait
+happens once at the end - not signed in advance at hand-computed nonces.
+Measured at 13 chunks on a 1s chain: 10,282ms sequential (and only 9 landed),
+1,199ms pipelined, 1,040ms pre-signed. The pipelined version gives up 159ms and
+keeps everything the pre-signed one gives up:
+
+- **A rejected send strands nothing.** This is the reason, and it is the hazard
+  this note already named: on the local node a rejected send burns a nonce
+  permanently, so in a pre-signed burst every chunk behind it holds a nonce the
+  chain will never reach - a whole turn lost rather than one transaction.
+  Awaiting each broadcast stops the loop before the rest are built.
+- **Failure attribution is exact**, which this note listed as work to be done.
+  It needed none: the loop knows which broadcast failed.
+- **The nonce machinery stays one-dispatch-at-a-time**, so the `send()` batch
+  shape this note asked for was not needed either.
+
+Broadcasting is simply not the expensive part: 13 chunks go out in 168ms
+awaited, 23ms pre-signed, both negligible beside one 1,000ms block. The two
+pieces of work this note predicted - sequential nonces out of the cache, and a
+batch shape for `send()` - were both consequences of the pre-signed design and
+neither was written.
+
+**What it would have bought, for the record**, since the deferral below was
+written before the build:
 
 - **It cannot be built without a gas LIMIT, which is the credits work.**
   Measured directly: estimating chunk 1 succeeds (537,642 on `main`, 366,002 on
