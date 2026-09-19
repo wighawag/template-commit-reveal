@@ -271,13 +271,13 @@ The corollary that is easy to miss: **the deciding cost of a branch is install a
 
 ```
 jolly-roger@main
-├─ with/indexer, with/webevm                    (service-layers PRD: stem main, no signer needed)
+├─ with/indexer, with/embedded-chain            (service-layers PRD: stem main, no signer needed)
 └─ with/local-signer
    ├─ with/hosted-account, with/messaging, with/sync
    ├─ with/notifications        stem: [with/indexer, with/local-signer]
-   ├─ with/all                  the single integration branch
    │
-   └─ template-commit-reveal@main              framework + address-keyed reference game
+integration                     the integration node, stem: [with/local-signer, with/embedded-chain]
+└─ template-commit-reveal@main              framework + address-keyed reference game
       │                                        (stratagems' identity shape)
       ├─ stratagems                            dormant, compile-only member (twgl)
       ├─ with/pixi-js                          pixi + assetpack + one sprite (D11)
@@ -363,7 +363,7 @@ The A/B split (fixed roster versus open entry) is real but it is not the top of 
 
 | axis | values | lives in | status |
 |---|---|---|---|
-| **World** | remote persistent / remote LAN / embedded in the tab | client wiring: a world is a CONTEXT, an identity is a CONNECTION | designed, not built. `jolly-roger:docs/worlds-and-identities.md` (on the archived `variant/offline` branch) names the one unlocking change: `createContext` takes its connection as a parameter. `with/webevm` is Wave 1 of the service-layers PRD |
+| **World** | remote persistent / remote LAN / embedded in the tab | client wiring: a world is a CONTEXT, an identity is a CONNECTION | the unlocking change is DONE (`createContext` takes its connection as a parameter, 2026-09-18); the world itself is Phase 4's second half. The branch is `with/embedded-chain`, NOT `with/webevm`: the capability is where the chain runs, and the library has already been renamed once under us. The design doc is `jolly-roger:docs/worlds-and-identities.md`, moving off the archived `variant/offline` branch before that branch is deleted |
 | **Membership** | open entry / closed roster | **contract**, plus a lobby | nothing anywhere. The lobby is not only roster formation: it is where everyone is PROVISIONED (account funded, identity acquired) before the game starts, which is what makes a closed roster possible at all |
 | **Epoch advance** | fixed timer / timer with early advance / unanimity only | **contract** (`_epoch()`), and the client's epoch store | prototyped in bomber-world: `ManualEpoch` state, `_moveToNextEpoch`, `_moveToNextPhase`. Its two TODOs are exactly the missing work |
 | **Reveal agency** | this browser / scheduler / fallback / third party | seam, done | `autoReveal` is a three-way and `commit()` already carries secret, epoch and `revealDueAt`. No fuzd adapter in this lineage yet (`with/fuzd`, Wave 4) |
@@ -871,6 +871,28 @@ So a manual deployment already hands a log-reading game a one-block history, eve
 
 **One refinement, because the first version of this was framed as a catch-up problem and it is not.** `ZonesReader` is a RE-DERIVE contract, not a delta one: it takes `{zones, fromBlock, toBlock, expectedCycleNumber}` and returns the whole state for those zones. So a log-reading implementation has to build the board out of the range it is handed, and a one-block range is total loss on EVERY poll rather than a gap a later poll closes. It is also not specific to the embedded world or to automine: a manual-policy deployment on an ordinary one-second chain has exactly the same zero.
 
+### The upstream shape is settled, 2026-09-18, and one of my arguments was already refuted by this document
+
+Decided with the owner before the build, because each of these turns a build into a different build.
+
+**`with/embedded-chain`, off jolly-roger `main`, a sibling of `with/local-signer`.** Named for the capability rather than the library: this document said `with/webevm` in two places and the library has already been renamed once under us (`embedded-eth-node` to `webevm`), so a library name in a branch name is a rename waiting to happen. Both mentions are corrected above.
+
+**It does NOT stem from `with/local-signer`, and I argued that it should and was wrong.** The argument was that webevm is execution-only and answers `eth_accounts` with `-32601`, so something must hold a key; the refutation is that `initBurnerWallet` is on `main`. Worth recording because **this document already said so** - Decision 1's tree has carried "(service-layers PRD: stem main, no signer needed)" on that row from the beginning. An argument that contradicts the plan should be checked against the plan before it is made.
+
+**And the local signer buys an embedded world nothing, which is the interesting half.** Its value is that it is RECOVERABLE, derived from a wallet signature so the same account re-derives the same key anywhere (D9). In an embedded world the chain and the key die together: a browser that loses its storage has not lost access to a world, it has lost the world. So there is nothing to recover to, and the whole D9/D10 family is inapplicable here rather than merely unused - those exist because the chain OUTLIVES the browser, and in the tab it does not. A burner is the right shape, not a compromise. The thing that will later want the local signer is the one the worlds doc names and it is not the world's signer at all: a long-lived ONLINE identity alongside the offline world, so what the player owns online can influence what the offline world offers. That is the first real consumer of the integration node.
+
+**`integration` is the node template-commit-reveal re-points to, and the name is deliberate.** Membership is `[with/local-signer, with/embedded-chain]` and `with/hosted-account` is OUT: it needs a hosted wallet service, and including it would tax every game in this tree with a `@etherplay/dev-wallet-host` devDependency, a `wallet-host` script, 101 lines of e2e runner, 28 of playwright config and a 293-line e2e suite that each game then deletes. It can join the day a game wants it, and adding a stem to an integration node is cheap where removing one is not.
+
+Three names were rejected and the reasoning generalises. `with/all` is FALSE the moment a branch is excluded, and it already means something exact one level down (this repo's own `with/all` really is all of its axes), so one name would have had two meanings in one tree. `with/presets` is plural for a branch holding one composition. `with/default` collides with `main`, which IS the default: the tool's own vocabulary is "the parent's primary", and `stemBranch` exists only to override it. And every `with/*` candidate breaks the one rule that prefix carries here, since jolly-roger reserves `with/*` for CAPABILITIES and uses bare names for everything else (`website`, `tooling`, `offshoot`, `work`). **The lesson worth keeping: the config already enumerates membership machine-readably, so a name that SUMMARISES membership can drift from it and a name that states the branch's ROLE cannot.** `integration` is the tool's own word for this kind of node.
+
+**`variant/offline` can be deleted, and only after its one unique file moves.** It is ONE commit ahead of `main` and its only unique content is `docs/worlds-and-identities.md`, the design document for this phase; ADR-0002, the synchronous SSR-inert context and the tab-id fix are all already on `main`. There is no tevm implementation on it, so nothing else is lost, and it is the last survivor of the old `variant/*` naming. Move the doc first (jolly-roger's `work:docs/`, or `with/embedded-chain`'s own README, which makes it the branch's rationale), then delete.
+
+**A new ROUTE rather than a converted demo**, because games support both modes and a swap would make them alternatives. Which forces the load-bearing constraint: **the mechanism lives in `lib/` and the route is only its demo.** This repo deleted `web/src/routes/demo/` in `d34ad44b` and HANDOFF records the resulting recurring `CONFLICT (modify/delete)`, so a new route upstream arrives here and is deleted here too - and anything world-building inside the route is thrown away with it.
+
+**Two words, and they are CONTEXT.md's own rule rather than drift.** `embedded-chain` is the MECHANISM and belongs to the framework; `offline` is the EXPERIENCE the player is choosing and belongs to the game, exactly as `turn` does. CONTEXT.md says name the mechanism and reserve the experience for games, so this wants one line in the glossary rather than a decision.
+
+**What the re-point costs, and it is not only this repo.** jolly-roger gains two verification nodes rather than one (`with/embedded-chain` and `integration`), which is the tax D11 named when this repo took on four. Its own divergence ritual has to be WRITTEN: `tooling` defaults to `FEATURES="with/local-signer with/hosted-account"`, and with two more branches it needs per-branch `ALLOWED` lists and the empty runs, exactly as this repo's three branch READMEs have. And the re-point itself has a worked example in this document already, under "What the re-point actually cost, against what was predicted", from when reveal-or-die's `stemBranch` moved.
+
 ### And two persistences, which is the sharper half of the mempool question
 
 Asked while settling the above: if a hotseat world put every player's turn in the mempool, what keeps them across a reload? **The mempool half is reassuring and largely vacuous** - automine has no mempool at all, and a lost send is the SAFE direction, since the submission record is written before the send and D10 reconciles it against the chain. Batching turns to land together also buys no secrecy, because the chain only ever shows a hash (D4), so it would cost durability for simultaneity theatre. It is a second argument for automine: an interval CREATES a mempool, and in the tab there is no other node holding it.
@@ -1165,7 +1187,7 @@ Two things this document said that the ADR corrects. `epoch`'s worst problem is 
 
 Nothing in the design above is waiting on an answer. What is outstanding is deferred on purpose, and each item names the event that reopens it.
 
-- **Whether this template ever stems from jolly-roger's `with/all`** (D1). Reopens when a second game wants the same service layer, which is also the trigger for earning a combination branch at all. Note this is a different question from D11's `with/all`, which is THIS repo's own integration branch over its own two axes; the two are one level apart and neither implies the other.
+- ~~**Whether this template ever stems from jolly-roger's `with/all`**~~ **DECIDED 2026-09-18: IT DOES, and the branch is called `integration` rather than `with/all`.** The trigger named here was "a second game wants the same service layer"; what actually fired was different and worth recording, because it is a shape this list should expect again. The embedded chain is a capability this template needs and hosted sign-in is one it does not, so the template needs a COMBINATION of two of jolly-roger's branches - and `stemBranch` is a single string that cannot be combined with `stem`, by design and with a hard error, so a descendant cannot integrate two parent branches itself. **The integration node is forced by the tool, not chosen for convenience.** Note this remains a different question from D11's integration branch, which is THIS repo's own over its own two axes; the two are one level apart and neither implies the other.
 - **Several identities per account** (D6). Reopens with conquest's port, which is the only consumer; the two architectural rules are kept meanwhile so it stays cheap.
 - **Stratagems and catacombs beyond compiling** (Decision 1). Reopens if a cascade breaks their build, which is the point of having them in the tree.
 - **What a game's deliberate exit costs**, where the game has one (D5). reveal-or-die's exit tile answers it for reveal-or-die; conquest's and catacombs' are theirs to design.
