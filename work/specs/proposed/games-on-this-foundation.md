@@ -830,7 +830,7 @@ and neither is done.
 
 **Phase 4: worlds. FIRST HALF DONE 2026-09-18; the MECHANISM IS BUILT 2026-09-19 and NEITHER ACCEPTANCE CLAUSE IS MET.** `createContext` takes its connection as a parameter in jolly-roger (small, already designed), then an embedded world in the reference game. Acceptance: the reference game plays a full round against a chain in the tab, and the chrome names the world it is describing rather than the one it assumed.
 
-**What exists: `with/embedded-chain` in jolly-roger, at `5f6cd8a`, unpushed.** `web/src/lib/embedded/` boots a webevm node on a minted chain id, runs the app's own rocketh deploy scripts on it through `@rocketh/web`, provisions through a game-supplied hook, and returns a `ConnectionFactory` describing that world. `web/test/lib/embedded/world.test.ts` builds a real chain, runs the real deploy and constructs a real `createContext({establishConnection})` on it, in node - so the parameter has a second caller and the test that pinned it is no longer alone. Suites on the branch: check 0/0, unit 942 in 82 server (+18 in 4 over `main`) and 39 in 7 client (unchanged), format clean, divergence 40 shared files with one allowed difference.
+**What exists: `with/embedded-chain` in jolly-roger, at `ad50120`, unpushed.** `web/src/lib/embedded/` boots a webevm node on a minted chain id, runs the app's own rocketh deploy scripts on it through `@rocketh/web`, provisions through a game-supplied hook, and returns a `ConnectionFactory` describing that world. `web/test/lib/embedded/world.test.ts` builds a real chain, runs the real deploy and constructs a real `createContext({establishConnection})` on it, in node - so the parameter has a second caller and the test that pinned it is no longer alone. Suites on the branch: check 0/0, unit 942 in 82 server (+18 in 4 over `main`) and 39 in 7 client (unchanged), format clean, divergence 40 shared files with one allowed difference.
 
 **What does NOT exist, and the split was deliberate: the route, the chrome, `integration`, and the re-point.** So the reference game has not played a round in a tab, because the reference game is in another repo that does not yet inherit this branch. See "The split, and what it leaves" below for what each remaining piece needs.
 
@@ -931,18 +931,21 @@ Each was a decision the plan deliberately refused to take on paper. Every answer
 
 **6. Provisioning is a HOOK, and it is the shape that keeps four branches out of the divergence tables.** `createEmbeddedWorld({provision})` runs after the deploy and before the world exists, and is handed the rocketh environment and the node - so it can execute contract calls (an ERC20 stake, an identity token) and use the node's own cheats (`evm_setBalance` for gas). The framework supplies the moment and the capability; the game supplies the meaning. A branch adds a file rather than editing a shared one.
 
-### The gas risk: webevm and hardhat agree, to the unit on a commit and to 24 gas on a reveal
+### The gas risk: webevm and hardhat agree TO THE UNIT, on all six readings
 
 The declared figures (`commitGas` 150,000, `revealGas` 600,000 on `main`) were all measured against hardhat, and since ADR-0003 they are passed as real gas LIMITS - a limit that is too low does not degrade, it reverts and takes the stake. webevm is `@ethereumjs/vm`, so this needed measuring rather than assuming. Same scenario as the GasMeasure harness, TIMED policy and localhost data so the numbers are comparable:
 
-| | hardhat (declared in `rocketh/config.ts`) | webevm 0.5.0 |
+| reading | hardhat, re-measured 2026-09-19 | webevm 0.5.0 |
 |---|---|---|
 | first commit, cold slots | 116,898 | **116,898** |
 | later commit, warm slots | 82,698 | **82,698** |
-| full fresh chunk, four zones, final | 535,561 | **535,561** |
+| full fresh chunk, first reveal | 535,537 | **535,537** |
 | the same chunk, non-final | 534,756 | **534,756** |
+| full fresh chunk, four zones, final | 535,561 | **535,561** |
 
-One reading differs: the first two full-chunk reveals in the webevm run came out at **535,537**, 24 gas below the worst case, which the hardhat harness does not have an equivalent of because its scenario reaches that state differently. The worst case itself is identical. So the declared limits keep **22.1%** headroom on a commit and **10.7%** on a reveal in the tab, the same as on hardhat, and **the declaration stays per-deployment rather than becoming per-world.** That is the useful outcome: the number travels with the contracts it was measured against, as ADR-0003 says, and the EVM underneath it is not a second variable.
+So the declared limits keep **22.1%** headroom on a commit and **10.7%** on a reveal in the tab, exactly as on hardhat, and **the declaration stays per-deployment rather than becoming per-world.** The number travels with the contracts it was measured against, as ADR-0003 says, and the EVM underneath it is not a second variable.
+
+**One claim of mine lasted an hour and is corrected here rather than quietly fixed.** The first write-up of this table said webevm came out 24 gas below hardhat on the first full chunk (535,537 against 535,561), and offered a scenario difference as the explanation. It was not a difference at all: 535,561 is the FINAL chunk of a chained turn, which is a different transaction from the first reveal of an unchained one, and I was comparing a reading against the wrong line of a comment. Re-running the hardhat harness (`~/dev/worktrees/.tcr-tools/GasMeasure.test.ts`, copied in, read, deleted) gives all six readings identical to webevm. **The shape is this document's own recurring one**: a number was explained before it was measured, and the explanation was plausible enough to survive being written down.
 
 **Measuring it turned up the thing that actually matters about an embedded clock**, which is in `work/notes/findings/an-automined-chain-has-no-clock-between-transactions.md`: reads run at the LAST MINED BLOCK's timestamp, and under automine a block exists only where a transaction happened, so a timed game in the tab cannot even ESTIMATE a reveal after its commit phase closes. The plan already concluded `Manual` for reasons about what a world is for; this is a mechanical second reason, and it is the one that makes a timed embedded world impossible rather than merely odd.
 
