@@ -16,8 +16,12 @@ git show work:HANDOFF.md
 git show work:work/specs/proposed/games-on-this-foundation.md    # Phase 4 in full, including the 2026-09-18 sections
 git show work:work/notes/findings/an-embedded-world-has-two-persistences-and-only-one-is-keyed-to-the-chain.md
 git show work:work/notes/findings/a-manual-cycle-gives-a-log-reading-game-a-one-block-window.md
-git -C ../jolly-roger show variant/offline:docs/worlds-and-identities.md   # the design doc, UNTIL IT MOVES (see below)
+git -C ../jolly-roger show with/embedded-chain:README.embedded-chain.md   # the design doc, MOVED 2026-09-19, with its corrections
 ```
+
+## WHERE THIS STANDS, 2026-09-19: the mechanism is built, neither acceptance clause is met
+
+Split on the line this file names at the bottom. `with/embedded-chain` exists in jolly-roger at `5f6cd8a`, UNPUSHED: `web/src/lib/embedded/` (chain id, node, deploy, records, world), `web/test/lib/embedded/` (18 tests, one of which boots a real chain, runs the real deploy and constructs a real context on it), and one shared-file edit (`core/connection/remote.ts`, an extraction). All six probes are answered by measurement and written up in the plan's Phase 4; the webevm-versus-hardhat gas question is answered there too (they agree). What is NOT done: the route, the chrome, `integration`, the re-point, the cascade, and deleting `variant/offline` (a push, so it needs asking). The plan's "The split, and what it leaves" lists the five remaining pieces in order, each with what it now knows - start with number one, which is that **nothing in `web/src` calls `advanceCycle` and a manual round cannot complete without it.**
 
 ## What is already done
 
@@ -35,7 +39,7 @@ The reference game plays a full round against a chain in the tab, AND the chrome
 - **`with/hosted-account` is OUT of `integration`**, because it needs a hosted service and would tax every game with a `dev-wallet-host` devDependency and a 293-line e2e suite it deletes. It can join when a game wants it. Put the membership RULE in that branch's README in one line; the name deliberately does not carry it.
 - **A new route, not a converted demo**, and therefore **the mechanism lives in `lib/` with the route as only its demo.** This repo deletes inherited demo routes (`d34ad44b`, and HANDOFF's recurring `modify/delete`), so anything world-building inside the route is thrown away here.
 - **`embedded-chain` is the mechanism's word, `offline` is the player's.** That is CONTEXT.md's own mechanism-versus-experience rule, so it wants a glossary line rather than a debate.
-- **`variant/offline` is deleted LAST, after its one unique file moves.** One commit ahead of `main`; only `docs/worlds-and-identities.md` is unique to it. Move it (jolly-roger `work:docs/`, or the new branch's README) and update every pointer, including the one at the top of this file.
+- **`variant/offline` is deleted LAST, after its one unique file moves. THE MOVE IS DONE, THE DELETION IS NOT.** One commit ahead of `main`; only `docs/worlds-and-identities.md` was unique to it, and it is now the second half of `README.embedded-chain.md` on `with/embedded-chain`, with a dated correction under every claim measurement has changed. Pointers updated here and in the plan. Deleting the branch is a push, so it waits to be asked for.
 - **Mining is `{type: 'auto'}` with NO interval**; one chain, not a chain per save; a distinct **chainId minted per world** so no persisted key changes. Reasoning for all three is in the plan's Phase 4 section. Persisted keys are free to change anywhere in this tree: nothing has users, owner-confirmed.
 
 ## Decide by PROBING, and report the probe
