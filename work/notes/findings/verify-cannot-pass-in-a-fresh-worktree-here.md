@@ -1,10 +1,28 @@
 ---
 title: offshoot-fanout --verify cannot pass in a fresh worktree in this repo
 type: finding
-status: DECIDED 2026-09-12 (option 6); not yet built
+status: DECIDED 2026-09-12 (option 6); not yet built. SECOND CAUSE FOUND 2026-09-20, in jolly-roger, with a different fix
 spotted: 2026-09-10
-relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 0, the verify gate), scripts/ensure-deployments.mjs
+relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 0 the verify gate, Phase 4 the re-point), scripts/ensure-deployments.mjs
 ---
+
+## A SECOND, INDEPENDENT CAUSE, in jolly-roger, found 2026-09-20
+
+Everything below is about ONE cause - the gitignored `web/src/lib/deployments.ts` - and the six options are all about that file. There is now a second, in a different repo, and it needs none of them.
+
+`with/embedded-chain` made `web/src` import the CONTRACTS PACKAGE for the first time: `lib/offline.ts` and `test/lib/embedded/world.test.ts` take `jolly-roger-contracts/rocketh/config.js` and `jolly-roger-contracts/deploy/001_deploy_greetings_registry.js`, and those export paths resolve into `contracts/dist`. **`dist` is built by `pnpm --filter ./contracts typescript` (`tsc && tsc -p test/js`), which nothing in an install runs**: the root `prepare` is `ensure-deployments.mjs` and contracts' own `prepare` is `set-defaults .vscode && pnpm compile`, and `hardhat compile` does not emit it.
+
+So a fresh worktree fails `check` twice over, and the two failures look nothing alike. Measured while building `integration`:
+
+| state of the worktree | `pnpm --filter ./web check` |
+| --- | --- |
+| fresh: no `deployments.ts`, no `dist` | **35 errors** in 14 files, mostly "Two different types with this name exist, but they are unrelated" |
+| after the deployments regen | **4 errors**, all `Cannot find module 'jolly-roger-contracts/...'` |
+| after `pnpm --filter ./contracts typescript` | **0** |
+
+The second state is the instructive one: four module-resolution errors that say nothing about deployments and nothing about a worktree, in a repo where the documented answer to a failing `check` is "regenerate the deployments" - which has just been done.
+
+**This one is cheap to fix and the fix is not option 6.** Contracts' `prepare` would have to run the `tsc` build as well as `compile`, which is one word and makes `pnpm install` sufficient. Not taken during the re-point because it is a change on jolly-roger `main` that cascades to every node in the tree, and the session that found it was cascading something else. **The general form is worth more than either fix: "what a fresh worktree lacks" is not one artifact, it is every gitignored BUILD OUTPUT the checked code imports, and the list grows whenever `web/src` reaches into another workspace package for the first time.**
 
 # The cascade gate is structurally unable to run here, and it does not say so
 
