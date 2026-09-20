@@ -2,7 +2,7 @@
   "stem": "github:wighawag/jolly-roger",
   "branches": {
     "main": {
-      "stemBranch": "with/local-signer"
+      "stemBranch": "integration"
     },
     "with/pixi-js": {
       "stem": "main"
