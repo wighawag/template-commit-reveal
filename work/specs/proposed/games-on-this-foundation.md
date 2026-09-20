@@ -1020,11 +1020,12 @@ Four of the five were invisible to every gate, and the one gate that fired did s
 
 | node | check | units (server) | client | e2e |
 |---|---|---|---|---|
-| jolly-roger `main` | 0/0 | 934 / 79 | 39 / 7 | not run |
+| jolly-roger `main` | 0/0 | 934 -> **938** / 79 | 39 / 7 | not run |
 | jolly-roger `with/local-signer` | 0/0 | 1203 / 96 | 53 / 8 | not run |
 | jolly-roger `with/hosted-account` | 0/0 | 1203 / 96 | 53 / 8 | not run |
-| jolly-roger `with/embedded-chain` | 0/0 | 960 / 83 | 41 / 8 | **58 in 2.7m** (first baseline) |
-| **jolly-roger `integration`** | **0/0** | **1229 / 100** | **55 / 9** | **63 in 6.8m** (first baseline) |
+| jolly-roger `website` | 0/0 | 934 -> **938** / 79 | 39 / 7 | not run |
+| jolly-roger `with/embedded-chain` | 0/0 | 960 -> **964** / 83 | 41 / 8 | **58 in 2.7m** (first baseline) |
+| **jolly-roger `integration`** | **0/0** | **1229 / 100** | **55 / 9** | **63 in 6.7m** (first baseline) |
 | tcr `main` | 0/0 | 1565 -> **1587** / 131 -> **134** | 71 -> **73** / 11 -> **12** | 52 in 8.1m |
 | tcr `with/pixi-js` | 0/0 | 1574 -> **1596** / 132 -> **135** | 71 -> **73** / 11 -> **12** | 52 in 8.3m |
 | tcr `with/nft-identity` | 0/0 | 1573 -> **1595** / 132 -> **135** | 71 -> **73** / 11 -> **12** | 52 in 8.3m |
@@ -1047,7 +1048,17 @@ All fourteen blocks were run and pass. **The script's `FEATURES` default was two
 
 **`mode.ts` is NOT what makes `with/hosted-account` hosted**, and both `tooling/README.md` and the script's own `ALLOWED` comment used exactly that as the worked example for why the two-sided check matters. `TARGET_STEP` is `SignedIn` on `with/local-signer` AND on `with/hosted-account`, so reverting the file between them changes nothing; with `ALLOWED=` empty those two branches differ in **0** files at both narrow widths. What makes that branch hosted is `web/.env`, which says so in its own comment, and **no `WATCH` path covers it and it is not a `.ts` file, so the guard believed to protect that branch cannot reach it.** The check's second side is still right and still worth having; it is simply not guarding the branch the example named, and believing it does is worse than knowing it does not.
 
-**And `with/local-signer` has a second divergent shared file under `core/` that no run had ever watched**: `core/ui/faucet/faucet-actions.ts`, outside both default paths. This is `with/embedded-chain`'s own instruction - watch wider than the default - landing on a branch nobody had pointed it at, which is the argument for the instruction rather than a fact about that branch. It is on the list now with an honest reason and a note that it should be SPLIT: returning the claim's transaction and `dispensedByClaim` are general (a wallet serves a cached balance until it sees a new block) and belong on `main`; only "fund the account, never the signer" is a statement about a branch where a signer exists. Not taken, because it is a change on `main` that cascades to every node.
+**And `with/local-signer` had a second divergent shared file under `core/` that no run had ever watched**: `core/ui/faucet/faucet-actions.ts`, outside both default paths. This is `with/embedded-chain`'s own instruction - watch wider than the default - landing on a branch nobody had pointed it at, which is the argument for the instruction rather than a fact about that branch.
+
+**IT WAS FIXED RATHER THAN LISTED, and the first write-up of this entry proposed the wrong fix.** That version said the file should be SPLIT, the general half going up to `main` and the "fund the account, never the signer" policy staying, and recorded the split as too expensive to take. Both halves of that were wrong on inspection:
+
+- **All the executable code was general**, not half of it. A wallet answers `eth_getBalance` from a cache until it sees a new block, so a balance read straight after a faucet claim reports the balance from before it; handing back the transaction is the remedy and has nothing to do with a signer.
+- **The policy was a COMMENT, not code.** `main` said the default target is "the wallet/owner in wallet mode" and the branch said "the AUTHENTICATED ACCOUNT", and the code on both read `accountExecutor`, which already answers that per branch. There was no policy to leave behind - only two comments each true on one branch, replaced by one true on all.
+- **`dispensedByClaim` is not exported any more**, which is what made the move free rather than a new liability. Nothing imported it on either branch, so promoting it as an export would have put a second entry point into a `lib/core` every downstream inherits and nobody calls - "a parameter that exists for nobody", which this document argues against elsewhere. A returned value a caller ignores costs nothing.
+
+So the file and its test are byte-identical across every branch again, the four `target` tests live on `main` with the code, and **the `ALLOWED` entry is gone rather than shrunk**: `with/local-signer` and `with/hosted-account` go 2 -> 1 over `core/` and 37 -> 35 wide, `integration` goes 6 -> 5. jolly-roger `main` and `website` go 934 -> 938 server tests and `with/embedded-chain` 960 -> 964, all of it the same four tests arriving; every other node is unchanged, because it already had them. e2e re-run where behaviour actually changed (`with/embedded-chain`, 58 in 2.7m) and on the load-bearing node (`integration`, 63 in 6.7m); the template nodes were not re-run, because with comments stripped the only difference their copy sees is a removed `export` keyword.
+
+**The general lesson, and it is about the ALLOWED list rather than about faucets: check whether a split is REAL before writing it down as a budget.** An entry on that list is permanent by default and is read later as a decision somebody made; this one would have outlived its reason on the day it was written, and the thing that killed it was reading the two versions side by side for ten minutes instead of trusting the shape of the diff.
 
 **Two counts in `README.embedded-chain.md` were also wrong and are corrected**: it summarised its budget as five shared files while its own table has listed seven since `types.ts` joined, and its expected `core/` total said 100 against a measured 101. Neither broke anything, which is the point - the script counts and the prose only describes.
 
