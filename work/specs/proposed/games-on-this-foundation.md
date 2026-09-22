@@ -1210,10 +1210,10 @@ It is a staircase in whole POLL INTERVALS. From four seats up, the `advanceCycle
 
 | node | check | units (server) | client | contracts | e2e |
 |---|---|---|---|---|---|
-| tcr `main` | 0/0 | 1623 -> **1639** / 138 -> **140** | 73 / 12 | 47 | **53 in 8.4m** (load 1.8) |
-| tcr `with/pixi-js` | 0/0 | 1632 -> **1648** / 139 -> **141** | 73 / 12 | 47 | **53 in 8.4m** (load 0.5) |
-| tcr `with/nft-identity` | 0/0 | 1631 -> **1647** / 139 -> **141** | 73 / 12 | 49 | **53 in 8.2m** (load 1.3) |
-| tcr `with/all` | 0/0 | 1640 -> **1656** / 140 -> **142** | 73 / 12 | 49 | **53 in 8.3m** (load 0.3) |
+| tcr `main` | 0/0 | 1623 -> **1639** / 138 -> **140** | 73 / 12 | 47 | **53 in 8.0m** (load 3.3) |
+| tcr `with/pixi-js` | 0/0 | 1632 -> **1648** / 139 -> **141** | 73 / 12 | 47 | **53 in 8.2m** (load 1.1) |
+| tcr `with/nft-identity` | 0/0 | 1631 -> **1647** / 139 -> **141** | 73 / 12 | 49 | **53 in 8.2m** (load 0.9) |
+| tcr `with/all` | 0/0 | 1640 -> **1656** / 140 -> **142** | 73 / 12 | 49 | **53 in 8.3m** (load 1.7) |
 
 Divergence with `ALLOWED=` empty over `web/src web/test web/e2e` with `EXT="ts svelte"`: **16** against `main`, **15** against `with/pixi-js`, **1** against `with/nft-identity` - unchanged, naming exactly the same files. The three new modules are byte-identical on all four branches, as is the route, which is the check that the lobby put no game knowledge in a place that has to be edited per branch.
 
