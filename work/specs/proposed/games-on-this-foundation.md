@@ -828,7 +828,7 @@ only checks the figure is not exceeded. It also measures on the LOCAL chain
 while the `default` deploy data is what a real chain would use. Both are small
 and neither is done.
 
-**Phase 4: worlds. FIRST HALF DONE 2026-09-18; the MECHANISM IS BUILT 2026-09-19; THE STRUCTURE IS DONE 2026-09-20 (`integration`, the re-point, the cascade, and jolly-roger's divergence ritual) and NEITHER ACCEPTANCE CLAUSE IS MET.** The structural piece is the last one that was about the TREE; what is left is about the GAME, and the next item is that nothing calls `advanceCycle`. See "The split, and what it leaves" for what the re-point cost, which was one conflict and five clean merges that were wrong. `createContext` takes its connection as a parameter in jolly-roger (small, already designed), then an embedded world in the reference game. Acceptance: the reference game plays a full round against a chain in the tab, and the chrome names the world it is describing rather than the one it assumed.
+**Phase 4: worlds. FIRST HALF DONE 2026-09-18; the MECHANISM IS BUILT 2026-09-19; THE STRUCTURE IS DONE 2026-09-20 (`integration`, the re-point, the cascade, and jolly-roger's divergence ritual); ACCEPTANCE CLAUSE ONE IS MET 2026-09-22 and clause TWO - the chrome - is all that is left.** The reference game plays a full round against a chain in the tab, on all four template nodes, gated by an e2e test: `advanceCycle` has a caller, the world is `lib/offline.ts`, and the round costs 137-166ms in a browser. The structural piece was the last one about the TREE; the rest was about the GAME. See "The split, and what it leaves" for what the re-point cost, which was one conflict and five clean merges that were wrong. `createContext` takes its connection as a parameter in jolly-roger (small, already designed), then an embedded world in the reference game. Acceptance: the reference game plays a full round against a chain in the tab, and the chrome names the world it is describing rather than the one it assumed.
 
 **What exists: `with/embedded-chain` in jolly-roger, at `cb3cc0d`, unpushed, with jolly-roger `main` one commit ahead of origin too (`6b73d7f`).** `web/src/lib/embedded/` boots a webevm node on a minted chain id, runs the app's own rocketh deploy scripts on it through `@rocketh/web`, provisions through a game-supplied hook, and returns a `ConnectionFactory` describing that world. `web/test/lib/embedded/world.test.ts` builds a real chain, runs the real deploy and constructs a real `createContext({establishConnection})` on it, in node - so the parameter has a second caller and the test that pinned it is no longer alone. Suites on the branch: check 0/0, unit 942 in 82 server (+18 in 4 over `main`) and 39 in 7 client (unchanged), format clean, divergence 40 shared files with one allowed difference.
 
@@ -1032,6 +1032,17 @@ Four of the five were invisible to every gate, and the one gate that fired did s
 | tcr `with/all` | 0/0 | 1582 -> **1604** / 133 -> **136** | 71 -> **73** / 11 -> **12** | 52 in 8.3m |
 | reveal-or-die | 0/0 | 1723 -> **1745** / 141 -> **144** | 65 -> **67** / 10 -> **11** | 50 in 6.8m |
 
+**And after the offline world, 2026-09-22.** Every template node gained the same `+28` server tests in 3 files - seventeen for the advance framework, five for its game half, six for the world test that came back - and one e2e, which is the whole round in a browser. The uniformity is again what says the cascade carried the change and added nothing of its own; the identity node's `+28` is the same COUNT over two different files, because its world test asserts custody where the others assert a reserve. reveal-or-die is deliberately not in this pass: see the section below on why that cascade is a port.
+
+| node | check | units (server) | client | e2e |
+|---|---|---|---|---|
+| tcr `main` | 0/0 | 1587 -> **1615** / 134 -> **137** | 73 / 12 | 52 -> **53** in 8.4m (load 0.5) |
+| tcr `with/pixi-js` | 0/0 | 1596 -> **1624** / 135 -> **138** | 73 / 12 | 52 -> **53** in 8.6m (load 0.9) |
+| tcr `with/nft-identity` | 0/0 | 1595 -> **1623** / 135 -> **138** | 73 / 12 | 52 -> **53** in 8.2m (load 2.1) |
+| tcr `with/all` | 0/0 | 1604 -> **1632** / 136 -> **139** | 73 / 12 | 52 -> **53** in 8.3m (load 0.5) |
+
+Contracts: 47 passing on `main`, 49 on the identity nodes, unchanged. Divergence with `ALLOWED=` empty over `web/src web/test web/e2e` with `EXT="ts svelte"`: **16** against `main` (was 14), **15** against `with/pixi-js` (was 13), **1** against `with/nft-identity` (unchanged). The two new ones are `lib/offline.ts` and `test/lib/embedded/world.test.ts`, both on the identity axis and both for the axis's own subject - what is at stake - and the branch READMEs record them with that reason.
+
 `integration` is exactly the union of its parents: 1203 + (960 - 934) = 1229 server and 53 + (41 - 39) = 55 client, with no term unaccounted for. Every pre-change number this document carried was re-measured where a node was touched and was exactly what it said, which is now seven sessions running.
 
 **And reveal-or-die reproduced its flake for the THIRD time, with the same signature to the test, the minute and the load.** First run 49 passed plus one flaky `board.e2e.ts` at **9.6 minutes** with load climbing past 7; re-run in isolation on the identical tree, **50 of 50 at 6.8 minutes**. That is the third independent observation of one flake, which retires the question of whether it is a defect: the variable is load, the failure is a wait rather than a wrong answer, and the note's instruction to re-run is worth more than any single run of it.
@@ -1064,9 +1075,44 @@ So the file and its test are byte-identical across every branch again, the four 
 
 ### What this leaves, and it is one item shorter than it looks
 
+~~Items 1, 4 and 5 remain.~~ **ITEMS 1 AND 5 ARE DONE, 2026-09-22, and item 4 (the chrome) is the only one left.** The section below is what they cost. The original text is kept because its prediction about item 1 was exactly right and its prediction about the combination in the paragraph below it was exactly right twice over.
+
 Items 1, 4 and 5 remain. **Item 1 is the one to take next and it is the smallest**: nothing in `web/src` calls `advanceCycle`, a manual cycle cannot complete a round without it in any world, and it is framework work that the embedded world merely exposed first.
 
 **One thing this node does NOT reconcile, recorded because a descendant meets it first.** A world takes the app's `targetStep` rather than choosing one, deliberately. On `integration` that means an embedded world runs at `TARGET_STEP = 'SignedIn'`, deriving a local signer over the world's own burner - a combination neither parent can have, since `with/embedded-chain` alone targets `WalletConnected`, and one that `/offline-demo`'s measurements were NOT taken under. The suites are green on `integration` and no browser has been pointed at that combination. `check` plus `test:unit` prove the text compiles and the units hold; this document has said all along that they prove nothing about a browser, and here is a specific thing they do not prove.
+
+### The reference game plays a round in the tab, 2026-09-22, and the combination nobody had run produced both of this pass's bugs
+
+**Acceptance clause one holds for the REFERENCE GAME now**, on all four template nodes, in a browser, gated by an e2e test. Clause two (the chrome) does not and is what remains of Phase 4.
+
+**Item 1, `advanceCycle`, was the smallest and it was framework.** `web/src/lib/game/core/advance.ts` decides WHEN to push and `web/src/lib/placement/advance.ts` supplies the two calls. `advancePermitted` mirrors the contract's guards, which is admissible here for a reason worth stating rather than assuming: it exists only to stop the client broadcasting a transaction it already knows will revert, so being wrong costs one reverted transaction and never a stake. Three properties are the design rather than the implementation: it is INERT under the timed policy (the contract refuses, so it polls nothing and sends nothing, and an ordinary deployment's RPC traffic is unchanged); an early advance under `hybrid` is opt-in, because spending the player's gas to buy a few seconds is a decision and not a correctness fix; and a failed advance backs off exponentially while the situation is UNCHANGED and resets the moment the chain says something new. `createCycleTrackers` also returns `refresh` now, a no-op under `timed`, so the caller that just MOVED the cycle does not wait out a poll interval to find out.
+
+**Item 5, the world, is `web/src/lib/offline.ts`, and probes 5 and 6 came out exactly as the paper said.** `cyclePolicy: Manual` with both durations zero, and everything else SPREAD from the deploy's own `default` rather than restated - the gas figures are measured against these contracts and webevm agrees with hardhat to the unit, so a second copy here would be a measurement waiting to drift. The provisioning hook gives the player gas and this game's stake, bought through the same `StakeSale` rail an online purchase uses rather than by minting and bonding by hand, so the offline world exercises the contract path the online one depends on.
+
+**THE HOOK PAID FOR ITSELF IN ONE CASCADE, which is the strongest evidence probe 6 was going to get.** `with/nft-identity` gates on custody of an avatar and has a fourth deploy script; its offline world mints an avatar through `GameAvatarSale` and checks `getAvatarsOf`/`getAvatarOwner` instead of `getReserve`. That difference cost TWO FILES of that branch's own (`lib/offline.ts` and its world test, taking the identity axis's list from 13 to 15) and **zero lines of `$lib/embedded`**, which is byte-identical on all four branches. Written per branch inside the mechanism, it would have been four divergent copies of the framework instead.
+
+**Both bugs this pass found were in the combination the paragraph above predicted**, and neither is visible to `check`, to `test:unit`, or to a dev run:
+
+- **The local signer broadcast to the APP's node.** `createCoreContext` built its transport from `PUBLIC_NODE_URL`, so a commit made in the world was posted to the remote chain. In a bare `vite dev` there is no url, so the fallback to the connection's provider was already being taken and the world worked - the development configuration took the right branch for the wrong reason. `EstablishedConnection.nodeURL` is the fix and it is `lib/core`, so it belongs upstream. The general form is worth reusing: **a parameter makes a fact per-world, and every other consumer of that fact is a bug until it is moved.** `deployments` was moved when the parameter landed; the node url was not asked about.
+- **`ensureConnected()` hangs at `WalletConnected` when the app signs in.** The step after it is a SIGNATURE, which in the app is a button on a connection flow, and a nested world mounts none. The world asks for it itself, which is honest only because the wallet is one it generated seconds ago and auto-approves.
+
+And a third, which is about worlds in general rather than about this one: **a restored world is provisioned again.** Persistence and provisioning are both right and they contradict each other - the reserve went 10, 20, 30 across reloads until the hook started asking the chain first. A stake that can be refilled by pressing F5 is not a stake. The framework could have offered "this world was restored" and that is the wrong question: what a game needs to know is whether its player already has what it was about to give them, and only the game knows what that is. Full write-ups are in `work/notes/findings/a-worlds-signer-broadcast-to-the-apps-node.md` and `a-restored-world-provisions-again.md`.
+
+**What a full round in the tab actually costs, measured in headless chromium against the production build at load ~0.4** (the dev-server figures are 2-3x these and are not the ones to quote):
+
+| | measured |
+|---|---|
+| page load to a booted, deployed, connected and signed-in world | **363-394 ms** |
+| the same after a reload, restoring the chain and skipping the deploy | **172-242 ms** |
+| authorising the browser's key and funding it (one transaction) | **387-393 ms** |
+| a WHOLE ROUND: commit, advance, reveal, advance | **137-166 ms** |
+| of which the four transactions | ~15, 19, 12, 21 ms |
+
+So the four-transaction round is about a seventh of a second and the player's own click is the slow part. jolly-roger's demo measured 264ms to a booted world against a page with no game in it; this one deploys a token, a routed proxy with four routes and a sale, and signs in over its own wallet.
+
+**The offline route's client chunk is 3.3 MB, 720 KB gzipped**, which is the bundle-size question the plan left open under probe 2 ("untested here because the route is not built"). It is route-scoped - a `/offline` node chunk, not in the shell - so it is paid by the player who asks for a chain in their tab and by nobody else. That is the honest number for `webevm` plus `@rocketh/web` plus the contract artifacts; a baked state dump would trade it for a generated artifact that goes stale in silence, which is still the wrong trade.
+
+**Not cascaded to reveal-or-die, deliberately, and that is a decision rather than an omission.** The framework half would merge cleanly and the GAME half cannot: `lib/offline.ts` names this repo's contracts package, its three deploy scripts and `$lib/placement/*`, and reveal-or-die deletes that whole directory and ships its own contracts. `placement/advance.ts` is in the same position. So the cascade there is a PORT - its own world, its own provisioning (an identity token it must own), its own two calls - and doing it as a merge would leave a node that does not type-check. It is the natural first job for whoever takes reveal-or-die next, and it is small: the framework, the seam and the route are all inherited.
 
 **Phase 5: the long cycle.** `with/fuzd` here, proven on a 24-hour deployment of the reference game, including C3 and C4 under an early advance. This is the mode three of the five games need and the one with the least evidence in this lineage: catacombs' fuzd plumbing is fully written and never called.
 
