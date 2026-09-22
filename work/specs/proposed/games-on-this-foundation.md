@@ -1112,11 +1112,69 @@ So the four-transaction round is about a seventh of a second and the player's ow
 
 **The offline route's client chunk is 3.3 MB, 720 KB gzipped**, which is the bundle-size question the plan left open under probe 2 ("untested here because the route is not built"). It is route-scoped - a `/offline` node chunk, not in the shell - so it is paid by the player who asks for a chain in their tab and by nobody else. That is the honest number for `webevm` plus `@rocketh/web` plus the contract artifacts; a baked state dump would trade it for a generated artifact that goes stale in silence, which is still the wrong trade.
 
+### The offline world has other players now, 2026-09-22, and a three-player round costs what a one-player round cost
+
+**This is the change that makes the offline world a commit-reveal game rather than a demonstration of one, and the reason it was needed is arithmetic rather than atmosphere.** A cycle with ONE waited-for member hides nothing: unanimity is satisfied by the only person present, so committing buys nothing, and two of the three conditions `advanceCycle` exists to enforce (`StillWaitingToCommit`, `StillWaitingToReveal`) cannot be reached at all. The world now enrols THREE and plays two of them.
+
+**THREE and not two**, because two is a duel: "everyone" and "the other one" are the same statement, and a board where two players contest one cell is a special case of the rule rather than an instance of it. At three, the accumulation in `_place` has something to accumulate.
+
+**And the world has to PLAY them, or it must not enrol them.** Under the manual policy nothing moves until every waited-for member has committed, so two members who never act do not make a quiet game, they make a frozen one, for the human as well.
+
+**Four decisions, each of which was taken before the code and survived it.** They hold nothing in memory (both the secret and the turn are derived from (chain, game, identity, cycle), so a reload reconstructs them exactly, which is D9's argument about a player's own secret arriving one level down). They commit an EMPTY turn when they cannot afford a bond, because topping them up is the F5-refillable-stake hazard one player over and refusing to commit freezes the cycle for everybody. They settle a commitment left from a past cycle rather than carrying it. And they are NOT Phase 6's NPCs: no intelligence, no difficulty, no interface.
+
+**THE SHAPE IS WHAT KEEPS THE DIVERGENCE FLAT, and it held exactly.** `web/src/lib/offline-players.ts` takes a player as `{privateKey, identity}` where the identity is already spelled the way the CONTRACT spells it, so the one thing that differs between branches stays in `lib/offline.ts`, which differs there already. **`offline-players.ts` and its test are ONE GIT OBJECT across all four branches**, and the divergence counts are unchanged at 16 / 15 / 1. The one line per branch is `offlineIdentityOf`, which is async for a reason upstream does not have: on the identity branch the token is MINTED BY PROVISIONING, so the only place the answer exists is the chain.
+
+**Two things the design did not anticipate, both found by running it, and the second was a live bug in the draft.**
+
+- **Under the manual policy, `acknowledgeMissedReveal` is unreachable, and a commitment nothing can open is therefore PERMANENT.** The advance that would carry a commitment into a past cycle is the advance that commitment blocks, and the contract refuses to settle a commitment from the current cycle. So the third decision above is insurance rather than a live path - it stays, because the file does not assume the policy and a timed deployment walks past an unopened commitment without asking anybody. What it means is that the derivation is a WIRE in exactly `AGENTS.md`'s sense, and the repair has to happen in the commit phase: a played player compares the HEAD on chain with the head it would build, not the cycle number, and re-commits when they disagree. Replacing is counted once, so the repair cannot push the tally past the membership.
+- **A reveal must not RE-DERIVE what it committed.** The affordability check reads the reserve, so a reveal that re-ran it could build a chain whose head is not the one on chain. It enumerates the two turns this file could have built and lets the HASH judge, which is the rule the app's own recovery already follows.
+
+Full write-up: `work/notes/findings/a-derived-turn-is-a-wire-and-a-manual-cycle-cannot-settle-one-it-cannot-open.md`.
+
+**MEASURED IN A BROWSER AGAINST THE PRODUCTION BUILD, and the one-player column is a re-measurement with the SAME script rather than the figures above** - which is the only way the comparison means anything, since those were taken by a script nobody kept.
+
+| | one player, re-measured | three players |
+|---|---|---|
+| page load to a booted, deployed, connected and signed-in world | 350-371 ms | **386-411 ms** |
+| the same after a reload | 158-167 ms | **161-173 ms** |
+| a WHOLE ROUND | 108-233 ms | **113-268 ms** |
+
+Load 0.6, headless chromium, five runs. On `with/nft-identity` the same script measures a round at **113-246 ms** and a boot at 829-883 ms (four deploy scripts and three avatar mints).
+
+**THE `authorise` ROW IS DELIBERATELY NOT IN THAT TABLE, and the reason is a small lesson about this document's numbers.** The table above says 387-393 ms for authorising and funding the browser's key; the script used here measures **642-662 ms for the same span on the same build with ONE player**, so the two are not measuring the same thing - most likely this one also waits for the dialog to close. It is not a regression: the three-player build measures 634-661 ms, which is the same figure. **The lesson is that a measurement whose SCRIPT was not kept cannot be re-measured, only re-taken**, which is why the one-player column above was re-taken rather than quoted, and why the driver for it is described in `HANDOFF.md` rather than left to be reinvented.
+
+**So a round of EIGHT transactions costs what a round of four cost, and that is entirely down to not waiting for a poll.** The plan's own question was whether the advance client and the played players would wait for each other - the advance polls once a second, the players on their own interval, and two polls in series is most of a round. Measured all three ways:
+
+| | a steady round |
+|---|---|
+| both pokes (shipped) | **121-253 ms** |
+| the players NOT poked when the human's submission lands | 826-838 ms |
+| neither poke | 820-1340 ms |
+
+So the answer is yes, the players should be poked, and it is worth about seven tenths of a second per round. The poke is `pokeWhenTheHumanActs`, which is the same courtesy `context/game.ts` already does for `cycleAdvance.check()` at the same two moments, plus the mirror of it (`onActed`, which asks the advance client to look the instant a played player has acted). **The players' own poll went to ONE SECOND**, the same interval as the advance client because it is the same job: it is a backstop, and 250 ms measured no faster (115-277 ms against 114-233 ms) for four times the reads. A poke arriving mid-pass is QUEUED rather than dropped, which is the half that makes it reliable - a pass takes as long as the transactions in it, so mid-pass is the likely case.
+
+**The offline e2e is a far stronger gate for free**, and its timeouts are unchanged, which is the thing to check rather than widen: the reveal phase cannot open until all three have committed and cycle 3 cannot start until all three have revealed, so the two assertions it already had now say that the played players ACTED. One assertion is added, that they reached the BOARD, because a player committing and revealing an empty turn would satisfy every count and leave the human looking at one cell.
+
+**And it turned up a contract defect on the identity branch, which is not fixed here.** `_place` counts a claimant when the player's stake on the cell was zero, so where a placement is FREE it is still zero afterwards and every placement counts again: nine claimants for nine placements there against seven here. The comment two lines above it says the zero-cost case was in mind for the zone index. Nothing reads the number in a way that breaks, so it is recorded rather than fixed, and the prose that explained the right behaviour with the wrong reason is corrected in `README.nft-identity.md`. See `work/notes/findings/a-free-placement-is-counted-as-a-new-claim-every-time.md`.
+
+**The counts, before and after, on every node.** The same `+8` server tests everywhere - seven for the played players and one for the world test asserting all three members - which is again what says the cascade carried the change and added nothing of its own.
+
+| node | check | units (server) | client | contracts | e2e |
+|---|---|---|---|---|---|
+| tcr `main` | 0/0 | 1615 -> **1623** / 137 -> **138** | 73 / 12 | 47 | **53 in 8.5m** (load 0.6) |
+| tcr `with/pixi-js` | 0/0 | 1624 -> **1632** / 138 -> **139** | 73 / 12 | 47 | **53 in 8.3m** (load 1.2) |
+| tcr `with/nft-identity` | 0/0 | 1623 -> **1631** / 138 -> **139** | 73 / 12 | 49 | **53 in 8.2m** (load 1.5) |
+| tcr `with/all` | 0/0 | 1632 -> **1640** / 139 -> **140** | 73 / 12 | 49 | **53 in 8.3m** (load 0.4) |
+
+Divergence with `ALLOWED=` empty over `web/src web/test web/e2e` with `EXT="ts svelte"`: **16** against `main`, **15** against `with/pixi-js`, **1** against `with/nft-identity`, all three unchanged, naming exactly the files they named before and no others.
+
+**What this does NOT do, and it is still the whole of what Phase 4 has left.** The chrome. The navbar, the account and the RPC banner live in `+layout.svelte`, outside every route subtree, so they still describe the remote world while three players take turns below them. The offline route says so on screen.
+
 **Not cascaded to reveal-or-die, deliberately, and that is a decision rather than an omission.** The framework half would merge cleanly and the GAME half cannot: `lib/offline.ts` names this repo's contracts package, its three deploy scripts and `$lib/placement/*`, and reveal-or-die deletes that whole directory and ships its own contracts. `placement/advance.ts` is in the same position. So the cascade there is a PORT - its own world, its own provisioning (an identity token it must own), its own two calls - and doing it as a merge would leave a node that does not type-check. It is the natural first job for whoever takes reveal-or-die next, and it is small: the framework, the seam and the route are all inherited.
 
 **Phase 5: the long cycle.** `with/fuzd` here, proven on a 24-hour deployment of the reference game, including C3 and C4 under an early advance. This is the mode three of the five games need and the one with the least evidence in this lineage: catacombs' fuzd plumbing is fully written and never called.
 
-**Phase 6: the rest of the matrix**, in the order that shares the most: closed roster, lobby and forfeit, then hotseat, then NPCs. Hotseat's prerequisites are smaller than they looked (D4): turn order, nonce serialisation across the accounts one device is sending for, and provisioning at the lobby. Storage needs nothing, which was checked rather than assumed: the round keys by `${chainID}_${gameAddress}_${player}` and the operations ledger appends the account to its scope prefix, so several local players already do not collide.
+**Phase 6: the rest of the matrix**, in the order that shares the most: closed roster, lobby and forfeit, then hotseat, then NPCs. **NPCs arrive with a worked precedent now and not a blank page**, and also with a line drawn: the offline world's two played players are deliberately the SMALLEST thing that gives a cycle somebody to wait for, and what Phase 6 adds is intelligence, difficulty and an interface - none of which belongs in `offline-players.ts`. What it should take from there is the two properties that were expensive to learn: hold nothing in memory, and never commit something this build cannot open. Hotseat's prerequisites are smaller than they looked (D4): turn order, nonce serialisation across the accounts one device is sending for, and provisioning at the lobby. Storage needs nothing, which was checked rather than assumed: the round keys by `${chainID}_${gameAddress}_${player}` and the operations ledger appends the account to its scope prefix, so several local players already do not collide.
 
 **Phase 7: the UI swap** (D8), on bomber-world once it is current. Not on the critical path for any mode, but it is the only test of a seam three repos already depend on, and its output is a number rather than an opinion.
 
