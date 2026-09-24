@@ -7,6 +7,39 @@ blockedBy: []
 
 # The extraction the second offline world earned, and the half of it that has not been earned yet
 
+## DONE, 2026-09-24, all five repos green and NOTHING PUSHED
+
+Four commits on the template (`main`, cascaded to `with/pixi-js`, `with/nft-identity` and `with/all`) and two merges in reveal-or-die:
+
+- `edeaa6b8` the dangling-import check, ported from reveal-or-die and generalised
+- `7b7b0188` the lobby into `$lib/game/lobby/{seats,lobby}.ts`, authorise into `$lib/game/acquire/authorise.ts`
+- `7bcb0531` the played-seat loop into `$lib/game/core/played.ts`, the secret into `$lib/game/core/secret.ts`
+- `596c31e3` the follow-up the descendant's merge earned (below)
+
+Heads: main `596c31e3`, with/pixi-js `808c84cb`, with/nft-identity `78662d2e`, with/all `058d9c74`, reveal-or-die `6987fead` (merges `74a9b209` and `6987fead`, both with two parents).
+
+**THE NAMES WERE THE MAINTAINER'S CALL AND WERE TAKEN**: the three paths as proposed, one module rather than a directory for step 2, and `CONTEXT.md` gains **Played seat** rather than a word for a played PLAYER, which the maintainer rightly called weird - it names the seat, because what makes it necessary is the clock and not the game. The secret's domain string became `PlayedSeat:secret`: the whole input list is a wire, and changing it was free only because `git ls-files contracts/deployments` is empty in every repo in this tree.
+
+**Counts, before -> after.** Template: check 0/0 -> 0/0 everywhere; server units 1639 -> 1654 (`main`), 1647 -> 1663 (pixi), 1646 -> 1662 (nft), 1655 -> 1671 (all), client 73 unchanged; contracts 47/47/49/49 unchanged; e2e 53 on every node. reveal-or-die: check 0/0 -> 0/0, units 1804 in 151 -> 1817 in 153 plus 67 in 11 unchanged, contracts 17 -> 17, e2e 51 of 51 -> 51 of 51. The +15 on `main` is the lobby's tests rewritten against fake deps (nothing mocked any more), six new ones for the loop, and three for the secret.
+
+**The e2e teeth were re-checked after the extraction, in BOTH repos, by silencing the shared loop's pass** (`const acted = false` in place of the call, so neither the poll nor the poke can drive it). The template's offline world fails at the reveal assertion with the board still on `Committed`; reveal-or-die's fails with `Expected: "Revealed"` / `Received: "Committed"`. Both restored and re-verified afterwards.
+
+### What it found that this brief did not predict
+
+- **The check caught something in the merge that delivered it.** reveal-or-die's `web/e2e/tests/offline.e2e.ts` imported `../../src/lib/offline-seats` by relative path, the rename merged cleanly, and nothing else would have said so until `check`. Third time for that shape, first time it was caught at the moment of the mistake.
+- **The section that carried the check into the descendant was false on arrival**, because it said "THIS repo's game" and meant `$lib/placement`. Fixed in `596c31e3` by naming both repos, which is the same lesson as the error message this brief already asked to generalise, one level up. See the finding of that name.
+- **`createCycleReader` in reveal-or-die asked for the whole `Context['publicClient']`**, and the played seats' own client is a viem client from the other of the two viem copies pnpm installs here (same version, different zod peer), so the types are unrelated. Narrowed to `readContract`, which is all it calls - no cast.
+- **`playedSeatSecret` arrived in the framework with no test of its own**, because the only coverage was the descendant's, in its game's test file, from when the function lived there.
+
+### What the interface question still costs
+
+Nothing here answers it. `createPlayedSeats` is still not designed, for the reason this brief gives: the three disagreements are the evidence, and two implementations one of which was ported from the other is not two independent ones. bomber-world is next and is cheap.
+
+---
+
+## The brief, as written
+
+
 ## Start here, from a cold context
 
 ```sh
