@@ -66,6 +66,28 @@ And the live question the second implementation is there to answer: **can a play
 
 **Do not extract the framework half in this task.** Write the second one, note what duplicated, and let the extraction be its own change with both implementations in front of it. Extracting from one example is how a framework gets fitted to its first game, which is the risk this whole plan is trying to retire.
 
+> **DONE 2026-09-24 (unpushed).** Step 2 is written: `offline.ts`,
+> `offline-players.ts`, the route and the e2e are this game's own;
+> `offline-lobby.ts` and `offline-authorise.ts` came across BYTE-IDENTICAL,
+> which was checked rather than trusted. The list this section asks for is
+> `work/notes/observations/what-duplicated-between-the-two-offline-worlds.md`.
+>
+> **Three of the four candidates survived and one did not.** The pass loop,
+> `secretFor`, `pokeWhenTheHumanActs` and the seat/lobby pair are all
+> confirmed. `turnFor` is not the same KIND of function - here it takes the
+> avatar's position and the maze - so it can only ever be game-supplied. The
+> unlisted surprise is `offline-authorise.ts`, which had no reason to survive a
+> port and did, because delegation is account-wide.
+>
+> **And the live question has an answer: NO, a played player cannot go through
+> `CommitRevealAdapter`**, because `ready()` resolves the connection and the
+> signer off the app `Context` - one player's connection, one player's key -
+> and a played player is a different key acting for a different identity. That
+> scoping is load-bearing elsewhere (it is what makes `send()` the single place
+> a node error is classified), so the adapter is not wrong, it is narrower than
+> it looked. What both worlds actually want is the smaller thing underneath it,
+> which has now been written three times.
+
 ## Acceptance criteria
 
 - reveal-or-die boots an offline world in the tab, seats three to N players, and plays a full round against its own contracts: commit, advance, reveal, advance.
