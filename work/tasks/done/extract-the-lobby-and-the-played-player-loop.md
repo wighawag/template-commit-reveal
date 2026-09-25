@@ -31,6 +31,10 @@ Heads: main `596c31e3`, with/pixi-js `808c84cb`, with/nft-identity `78662d2e`, w
 - **`createCycleReader` in reveal-or-die asked for the whole `Context['publicClient']`**, and the played seats' own client is a viem client from the other of the two viem copies pnpm installs here (same version, different zod peer), so the types are unrelated. Narrowed to `readContract`, which is all it calls - no cast.
 - **`playedSeatSecret` arrived in the framework with no test of its own**, because the only coverage was the descendant's, in its game's test file, from when the function lived there.
 
+### The acceptance rule was then enforced on the OLDER files too, 2026-09-24
+
+`91eb558c` and its cascade (`31f13d7d`, `bca535b5`, `c83d3003`, reveal-or-die `d9334276`). Five sentences under `$lib/game/**` named one game's answer and every one of them was an instruction a descendant inherits and then has to read as a lie: `acquire/README.md`'s `StakeSale` example, four `$lib/placement/render` paths in `render/README.md`, `identity.ts` citing a descendant's `select(avatarID)`, `core/cycle.ts` calling `CycleReading` "the contract's `getCycle`", and `core/reveal-window.ts` naming `acknowledgeMissedReveal`. What stayed is the survey evidence that names repos without telling the reader to go anywhere - see the observation `evidence-may-name-a-repo-an-instruction-may-not.md` for the line, and for why `core/advance.ts` is left for a task of its own.
+
 ### What the interface question still costs
 
 Nothing here answers it. `createPlayedSeats` is still not designed, for the reason this brief gives: the three disagreements are the evidence, and two implementations one of which was ported from the other is not two independent ones. bomber-world is next and is cheap.
