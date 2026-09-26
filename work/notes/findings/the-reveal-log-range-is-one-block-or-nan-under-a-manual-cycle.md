@@ -1,12 +1,18 @@
 ---
 title: Under a manual cycle the framework reads reveal logs from one block, or from NaN, and says nothing
 type: finding
-status: spotted 2026-09-26; worked around in bomber-world only; the fix belongs in the template
+status: FIXED 2026-09-26 at its home, template-commit-reveal main eb1b02fd, cascaded to every node; bomber-world's workaround retired
 spotted: 2026-09-26
 relates-to: web/src/lib/onchain/state.ts, web/src/lib/game/core/chain-time.ts, work/tasks/done/port-bomber-world-onto-reveal-or-die.md
 ---
 
 # The reveal-log range is sized in seconds, and a manual cycle has none
+
+## FIXED, the same day
+
+`logRangeStart` in `web/src/lib/onchain/state.ts` (template-commit-reveal `main` eb1b02fd): the same span on a timed chain, floored at `MIN_LOG_BLOCKS` (1000 blocks), and the floor for any span that is not a finite number. Pinned by `web/test/lib/onchain/log-range.test.ts`, three of whose four tests fail on the old arithmetic. Cascaded to `with/pixi-js`, `with/nft-identity`, `with/all` (each verify green), reveal-or-die 4a568e49 (verify and e2e 51/51 green) and bomber-world, where the local `MIN_LOG_BLOCKS` copy was deleted in 0373b654. Chose the floor rather than the cycle-to-block mapping below: it fixes both defects in one pure function, and the mapping can still replace it.
+
+The rest of this note is the diagnosis, kept as written.
 
 **Found by bomber-world's new `offline-bombs.e2e.ts`**, which is the first test anywhere in the tree that asserts on something only the reveal LOG can put on the board. A bomb is placed from `CommitmentRevealed`, so when the log read came back empty the bomb was missing, where a missing walk animation had gone unnoticed.
 

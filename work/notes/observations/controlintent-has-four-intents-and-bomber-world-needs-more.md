@@ -1,12 +1,18 @@
 ---
 title: The framework's input seam has four intents, and bomber-world has three actions for its one secondary
 type: observation
-status: spotted 2026-09-26; worked around in bomber-world, nothing changed in lib/game
+status: RESOLVED 2026-09-26, template-commit-reveal main 2751ccd9, cascaded; bomber-world moved onto it
 spotted: 2026-09-26
 relates-to: web/src/lib/game/render/intents.ts, web/src/lib/game/render/keys.ts, web/src/lib/game/render/gamepad.ts, work/tasks/done/port-bomber-world-onto-reveal-or-die.md
 ---
 
 # `ControlIntent` is direction, confirm, secondary and cancel, and a game can outgrow it
+
+## RESOLVED, the same day, with the first option below
+
+`ControlIntent` gained `{type: 'action'; name: string}`, and the adapters take a game's bindings: `KeyOptions.actions` (key to name) and `GamepadOptions.actions` / `createGamepadRecognizer(actions)` (button index to name), each consulted before the defaults so a game can also take a default back. Additive: reveal-or-die binds nothing and needed no change. bomber-world's delayed bomb is now that action, on B and on the gamepad's north button, and its private key listener is gone. The overload of `secondary` (leave on the exit tile, instant bomb elsewhere) stays, deliberately: those two are never available together.
+
+The rest of this note is what it said before the fix.
 
 **What bomber-world needs to say with a key or a pad:** step (four ways), commit, undo, leave the world, drop an instant bomb, drop a delayed bomb. That is three non-directional actions where the framework has one (`secondary`).
 
