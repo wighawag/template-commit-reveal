@@ -1,7 +1,7 @@
 ---
 title: offshoot-fanout --verify cannot pass in a fresh worktree in this repo
 type: finding
-status: RESOLVED 2026-09-26 by a throwaway deploy at install (jolly-roger main f8b3d99), not by option 6. The SECOND cause (contracts `dist` not built at install) is fixed from template-commit-reveal down, whose contracts `prepare` runs `tsc`,, and in jolly-roger `with/embedded-chain` (9bd79d8) and so `integration` since the same day
+status: RESOLVED 2026-09-26 by a throwaway deploy at install (jolly-roger main f8b3d99), not by option 6. The SECOND cause (contracts `dist` not built at install) is fixed from template-commit-reveal down, whose contracts `prepare` runs `tsc`, and in jolly-roger `with/embedded-chain` (9bd79d8) and so `integration` since the same day
 spotted: 2026-09-10
 relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 0 the verify gate, Phase 4 the re-point), scripts/ensure-deployments.mjs
 ---
