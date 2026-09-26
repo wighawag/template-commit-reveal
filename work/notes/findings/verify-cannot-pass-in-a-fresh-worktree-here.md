@@ -1,10 +1,20 @@
 ---
 title: offshoot-fanout --verify cannot pass in a fresh worktree in this repo
 type: finding
-status: DECIDED 2026-09-12 (option 6); not yet built. SECOND CAUSE FOUND 2026-09-20, in jolly-roger, with a different fix. THIRD CASE 2026-09-26, bomber-world, no records at all
+status: RESOLVED 2026-09-26 by a throwaway deploy at install (jolly-roger main f8b3d99), not by option 6; the second cause (contracts dist) was already fixed where contracts' prepare runs tsc
 spotted: 2026-09-10
 relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 0 the verify gate, Phase 4 the re-point), scripts/ensure-deployments.mjs
 ---
+
+## RESOLVED 2026-09-26, and not by option 6
+
+**The premise option 6 rests on was wrong.** It says the ~1 KB of `linkedData` and addresses "cannot be derived" and so has to be committed. The deploy scripts derive `linkedData` every time they run, and type-checking needs no real address. So `ensure-deployments.mjs` (jolly-roger `main` f8b3d99, cascaded to every node) now falls back, when no committed records export, to `contracts/scripts/deploy-ephemeral.ts`: the repo's own deploy scripts through rocketh, on an in-process chain that exists only for that process, then `rocketh-export`, then the records are deleted. Committed records still come first, so repos with a live deployment behave exactly as before. Nothing is committed and nothing can drift, because it is the same deploy.
+
+**One trap, found building it:** the script cannot simply use the `default` network, because template-commit-reveal and the games redefine it with one-second interval mining and `gasPrice: 1n`, below the in-process chain's base fee, and a deploy there is never mined (it hung for the full ten minutes in bomber-world). The script connects to `default` and overrides instant mining and an automatic gas price.
+
+**Measured:** a fresh clone of bomber-world (no records) installs in 7 s with pnpm's store and the compiler cached, and its verify passes: check 0/0, 1883 + 70 tests. template-commit-reveal, which also commits no records, passes the same way (1690 + 76). jolly-roger with its records moved aside: 2 s, 947 + 42. The cascade reached every node: jolly-roger's six branches, bleeps, mandalas, template-commit-reveal's four, reveal-or-die, bomber-world, each verify green.
+
+The rest of this note is the history, kept as written.
 
 ## A THIRD CASE, bomber-world, 2026-09-26: no records at all, by decision
 
