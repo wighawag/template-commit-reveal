@@ -14,8 +14,10 @@ Five games exist that are all commit-reveal, all written independently, and all 
 
 ```
 jolly-roger (main)                      generic app template
-  └── with/local-signer                 + sign-in that derives a local signer
-        ├── with/hosted-account         + email/social sign-in - NOT tracked here
+  ├── with/local-signer                 + sign-in that derives a local signer
+  │     └── with/hosted-account         + email/social sign-in - NOT tracked here
+  ├── with/embedded-chain               + a chain in the tab (offline play)
+  └── integration                       = with/local-signer + with/embedded-chain
         └── template-commit-reveal      + the commit-reveal framework  <- THIS REPO
               ├── reveal-or-die         avatar in a maze
               │     └── bomber-world    reveal-or-die + bombs
@@ -27,6 +29,8 @@ jolly-roger (main)                      generic app template
 **jolly-roger renamed and reshaped its branches, and this repo now hangs off a different one.** What was `variant/full` is now `with/local-signer`, and the `with/*` branches are FEATURES rather than variants: each adds one capability to `main`, they are meant to compose, and `jolly-roger`'s `tooling` branch carries `check-shared-divergence.sh` to fail a cascade merge that leaves a shared file holding two versions of the same logic. The tree is declared in `fanout.config.json` on jolly-roger's orphan `offshoot` branch.
 
 The consequence for this repo is not cosmetic: **hosted (email/social) sign-in is no longer upstream of us.** It is `with/hosted-account`, a SIBLING built on the same parent. What this template inherits is the local signer and nothing more, which is exactly what it needs (see "Who signs what" below), and a descendant that wants hosted accounts adopts the combination rather than finding it already merged down. `web/src/lib/core/connection/mode.ts` is where that choice is a single line, `TARGET_STEP`.
+
+**Since 2026-09-20 the parent is jolly-roger's `integration`, not `with/local-signer`.** `integration` combines `with/local-signer` with `with/embedded-chain`, which is what the offline world (`lib/offline.ts`) is built on. So this template inherits the local signer AND the embedded chain, and still not hosted accounts. The cascade edge is `"stemBranch": "integration"` in this repo's `fanout.config.json` on the `offshoot` branch.
 
 Every game descends from `template-commit-reveal`, including stratagems and catacombs. An earlier version of this document drew stratagems hanging off the parent branch instead; that was wrong. They are deferred on GROUNDS OF EFFORT (a different generation of the stack, see the section at the end), not because they sit somewhere else in the tree. The seams have to fit them.
 
