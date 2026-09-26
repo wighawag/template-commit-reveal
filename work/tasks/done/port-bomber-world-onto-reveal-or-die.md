@@ -126,3 +126,56 @@ Re-homed, not copied. The places reveal-or-die's world already has: action packi
 ## Counts to start from
 
 reveal-or-die `main` `cc43fb2b`, measured 2026-09-26: check 0/0, 1843 server units in 155 files, 70 client in 12, 17 contracts, 51/51 e2e. bomber-world: unmeasured, and step 0 measures it.
+
+## Done, 2026-09-26
+
+**Heads.** bomber-world `main` ac1f24aa, three commits over 35c1510a: d9bdc581 the merge (parents 35c1510a and cc43fb2b), e90373b8 bombs in the contract, ac1f24aa bombs in the client. Its orphan `offshoot` branch is af4d2a12 (reveal-or-die's `fanout.config.json` with the stem changed to `github:wighawag/reveal-or-die`, stem branch `main`), and it has a `stem` remote at reveal-or-die. reveal-or-die cc43fb2b and the template are untouched. **Nothing is pushed yet**, including `offshoot`, pending the user's go-ahead and the redeploy question below.
+
+**Shape taken: the recommended one.** The merge is current reveal-or-die plus the brand and nothing else, green; bombs return in two commits, contract then client, each verified green before the next. The merge commit's message carries every resolution.
+
+### Counts, before and after
+
+| bomber-world | pnpm | check | server units | client units | contracts | e2e |
+|---|---|---|---|---|---|---|
+| 35c1510a (before) | PATH has 11.25.0 and nothing pins a version, so `pnpm install` FAILS (`ERR_PNPM_IGNORED_BUILDS`: pnpm 11 no longer reads the `pnpm` field); 10.28.1, reveal-or-die's pin, installs | 19 errors, 18 of them the missing generated `deployments.ts`; with that exported from the old rise-testnet records, 1 (`$lib/manifest.json`, which only a build generates) | none exist (no script) | none | **0 of 1**: "basic test" fails, position 0n where 4n was expected | none exist |
+| d9bdc581 (merge) | 10.28.1, inherited pin | 0/0 | 1843 in 155 | 70 in 12 | 17 | 51/51 |
+| e90373b8 (contract) | | 0/0 | 1843 in 155 | 70 in 12 | 18 | not run |
+| ac1f24aa (client) | | 0/0 | 1874 in 156 | 70 in 12 | 18 | 52/52 |
+
+The merge row equals reveal-or-die cc43fb2b exactly, which is what "current reveal-or-die plus its brand" should measure. The contracts delta is the one new test (a bomb naming the wrong cell); the replay test was extended, not duplicated. The server delta is +31 tests and +1 file (`bombs.test.ts`), all for bombs; nothing inherited was removed. The e2e delta is `offline-bombs.e2e.ts`. e2e always with `E2E_RPC_PORT=8638 E2E_PORT=4638`, ports checked free first. `git diff --stat stem/main -- web/src/lib/core web/src/lib/game` is empty at every commit. `check-dangling-imports` was clean before each.
+
+### Teeth, each run against the whole contract suite
+
+- A delayed bomb also blocking its own cycle (`countdown = 0`): only the replay test fails. With its absolute assertions stripped, the order comparison ALONE still fails (B ends cycle E on (0,3) when A reveals first, (0,2) when B does), so the property itself is pinned and not only the outcome.
+- A blast landing in the placing cycle (`explodesAt = epoch + bombTimeout - 1`): only the replay test fails.
+- `_placeBomb` not checking `data`: only the new data-check test fails.
+- `blastCells` (the client's mirror) letting walls stop nothing: only the replay test fails, at the mirror-agrees-with-the-chain assertion.
+- Client side: `blocksCell` off by one cycle fails 3 tests (bombs and planning); the NaN log-range guard removed fails its test.
+
+### Decisions the brief left open, and what was decided
+
+- **The old deployment records are DELETED** from where the build reads them, and live in git history at 35c1510a. Checked on Blockscout: rise-testnet's Game (0x7b27cc76...5529) last saw a transaction on 2026-08-06, one sender, nineteen in two minutes ending in a reveal (so nothing is committed and unrevealed), and nothing in the 51 days since; somnia-testnet's (0x0eb2a866...1b1d) has zero transactions ever. reveal-or-die's own rise-testnet records, which the directory rename would otherwise have kept under bomber-world's name, are deleted too: they would point a bomber-world build at the other game's world.
+- **The contracts workspace package keeps the name `reveal-or-die-contracts`.** It is an import specifier in 30 inherited files; renaming it would diverge each from the stem for no behaviour. Root and web packages are `bomber-world-*`.
+- **LICENSE restored** (MIT, the stem's). bomber-world lost it without comment in its 2026-01-14 template merge 827e5a4b.
+- **The two-bomb cap keeps its `break`**, now `MAX_BOMBS_PER_SUBMISSION` and written at the line: a third bomb ends the submission, exactly as a move over `MAX_MOVES` already did. The planner refuses a third, so an honest player never meets it.
+- **`_boxes_*` dropped**: placeholders for destructible boxes, which exist only as a design in `NOTES.md`.
+- **Exit after a bomb is legal now in the client too.** bomber-world's old client refused it; the contract never did, so that rule only told honest clients from modified ones.
+
+### What the brief did not predict
+
+1. **Verify cannot pass on a fresh clone yet, measured.** With no committed deployment records, `ensure-deployments.mjs` generates nothing and a fresh clone's `check` has 30 errors. offshoot-fanout runs verify in a temporary worktree, so bomber-world's verify fails there until it is redeployed and the records are committed (or option 6 of `verify-cannot-pass-in-a-fresh-worktree-here.md` is built). The brief listed "the port is a REDEPLOY" and "verify green" separately; they are the same item. Everything above was measured in the developer's tree, with `deployments.ts` exported from a local deploy.
+2. **The chain had to say how an avatar died.** A blast and going quiet both produce `life == 0`, and reveal-or-die's `world/death.ts` said in as many words that a second way to die needs the chain to say which. So `PublicAvatar` gained `caughtInBlast`, an ABI change the brief did not list. Without it, the death notice would have told a bombed player "that is the only way to die here".
+3. **A read-only getter, `getBombsAndExplosions(epoch, zone)`**, so the replay test asserts the bomb and blast words directly, and so the client's blast mirror (`contracts/js/bombs.ts`) is pinned against the chain the way `zones.ts` is.
+4. **Two defects upstream in the reveal-log range under a manual cycle**, found by the new e2e and worked around game-locally in `world/state.ts`: see `work/notes/findings/the-reveal-log-range-is-one-block-or-nan-under-a-manual-cycle.md`. reveal-or-die and the template have both.
+5. **The framework's input seam has four intents and bomber-world has more actions.** `secondary` now leaves on the exit tile and drops an instant bomb elsewhere (bomber-world's own old reading of that key); the delayed bomb is B plus a HUD button, and a gamepad cannot reach it. Not worked around in `lib/game`: see `work/notes/observations/controlintent-has-four-intents-and-bomber-world-needs-more.md`.
+6. **Bombs multiply recovery's search by about 190**, and the budget was kept. Two passes (every bomb-less turn first, exactly reveal-or-die's search; then turns with bombs by length) reach every plain turn, every one-bomb turn up to 8 actions and every two-bomb turn up to 7, measured from four starts and pinned by a test. The price: an unmatched search now always spends the whole budget (about 5 s in a browser, was about 1.4 s). The inherited test that ran such a search to exhaustion starved `offline-lobby.test.ts` into its 5 s timeout in 2 of 4 full runs (0 of 3 on reveal-or-die); it now takes an explicit budget, and the suite was 3 of 3 green after.
+7. **A dead avatar is not waited for, so the offline world races on without it**, from cycle 4 to 8 in under eight seconds. The e2e therefore keeps the player alive while the board is read (a delayed bomb: cycle 4 shows it and refuses the step back, cycle 5 kills) and reads the death last.
+8. **`git lfs fetch stem main` fetches the objects of bomber-world's OWN `main`**, because the ref resolves locally. `git lfs fetch stem stem/main` is what worked; the checkout then smudged reveal-or-die's art without error.
+9. **`pnpm --filter ./contracts typescript` fails on `test/js/utils/index.ts:79` (TS2322) in reveal-or-die cc43fb2b too.** Not in verify; left for upstream.
+10. **Inherited paragraphs read in bomber-world, and left alone** because the files are byte-identical to the stem's and this repo's rule is not to annotate those: AGENTS.md says "The README is byte-identical to the stem's in this repo" (false here, and in reveal-or-die), calls the storage `placement/storage.ts here` and names `_place` as the one exemption "here" (both the template's game, false in both descendants); `world/storage.ts` argues its rename was free because "this repo HAS one (`contracts/deployments/rise-testnet`)", which is false in bomber-world now. The fix for the AGENTS.md ones is upstream, at the template.
+
+### Corrections to this task and to the plan
+
+- **This task was right on every measured number** (24 conflicts by kind, 35 files, the base, the clean-and-wrong deployment records, reveal-or-die's counts). Imprecise in one claim: "a reveal in cycle E reads `_explosions[<= E]` (in `_getResolvedAvatar`)". A reveal never calls `_getResolvedAvatar` at all; it runs at commit and in the getters. The argument is stronger than stated, and the comment at the code says so.
+- **No disagreement found between this task and the prompt it was handed with.**
+- The plan's repo table said bomber-world was "1067 commits behind" with a different layout, and its tree called it a "dormant, compile-only member". Both corrected in the same commit as this file. D3 is marked done, and Phase 7 is unblocked once bomber-world is pushed.

@@ -1,10 +1,14 @@
 ---
 title: offshoot-fanout --verify cannot pass in a fresh worktree in this repo
 type: finding
-status: DECIDED 2026-09-12 (option 6); not yet built. SECOND CAUSE FOUND 2026-09-20, in jolly-roger, with a different fix
+status: DECIDED 2026-09-12 (option 6); not yet built. SECOND CAUSE FOUND 2026-09-20, in jolly-roger, with a different fix. THIRD CASE 2026-09-26, bomber-world, no records at all
 spotted: 2026-09-10
 relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 0 the verify gate, Phase 4 the re-point), scripts/ensure-deployments.mjs
 ---
+
+## A THIRD CASE, bomber-world, 2026-09-26: no records at all, by decision
+
+The port onto reveal-or-die (`work/tasks/done/port-bomber-world-onto-reveal-or-die.md`) deleted every committed deployment record, because the old ones described contracts the merged source no longer builds and nobody was playing them. So `ensure-deployments.mjs` has nothing to export, and a fresh clone's `check` has **30 errors**, measured. The cause is the one below, but here it cannot be cured by committing a regenerated file, because there is nothing to regenerate FROM until bomber-world is deployed. Option 6 would cure it (the committed kilobyte could describe a deployment that does not exist yet); so would the redeploy the port calls for. Until one of them lands, bomber-world's `offshoot` verify fails in the temporary worktree offshoot-fanout runs it in.
 
 ## A SECOND, INDEPENDENT CAUSE, in jolly-roger, found 2026-09-20
 

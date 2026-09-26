@@ -33,7 +33,7 @@ What is genuinely undecided, and what this document is for:
 | `jolly-roger` | template-svelte tree | `main`, `with/local-signer`, `with/hosted-account`, `website`. Clean. |
 | `template-commit-reveal` | `jolly-roger@with/local-signer` | fully merged with its stem. Clean. |
 | `reveal-or-die` | `template-commit-reveal@main` | **126 ahead, 0 behind.** Adds ~40 files under `lib/world`, `lib/input`, `lib/ui/loading`, `lib/debug`; deletes `lib/placement` exactly as designed. **Modifies only 10 inherited files**, one of them framework (`game/core/round.ts`, +68, one option). |
-| `bomber-world` | `reveal-or-die@main` | **1067 commits behind.** Different layout (`onchain/evm`, not `contracts`). |
+| `bomber-world` | `reveal-or-die@main` | **1067 commits behind.** Different layout (`onchain/evm`, not `contracts`). **CORRECTED 2026-09-26: current.** It was 1481 behind by the time it was ported (D3); it is now reveal-or-die cc43fb2b plus bombs and its brand, with a `stem` remote and an `offshoot` config, on `contracts/`. |
 | `catacombs`, `stratagems` | none | separate stack generation; dormant by decision, see below. |
 | `conquest-v1` | `jolly-roger@main` directly | 24 ahead, own pre-seams `lib/game` and `lib/render`, move pipeline unported. |
 
@@ -283,7 +283,7 @@ integration                     the integration node, stem: [with/local-signer, 
       ├─ with/pixi-js                          pixi + assetpack + one sprite (D11)
       ├─ with/nft-identity                     identity is a token; acquisition proven
       └─ with/all                              the single integration branch (D11)
-         ├─ reveal-or-die  ──▶ bomber-world    dormant, compile-only member
+         ├─ reveal-or-die  ──▶ bomber-world    current since 2026-09-26 (D3), no longer dormant
          ├─ catacombs                          dormant, compile-only member
          └─ conquest-v1                        moves off jolly-roger onto here
 ```
@@ -1277,7 +1277,7 @@ Divergence with `ALLOWED=` empty over `web/src web/test web/e2e` with `EXT="ts s
 
 What the branch deliberately does NOT prove, so nobody assumes it does: an identity that is degraded rather than seized (docking levels), and the third level conquest has, where an account owns an EMPIRE which controls AVATARS. Delegation already covers account-plus-controller; empire-over-avatar is a further level and conquest's port is where it gets proven.
 
-**D3. Bomber-world is not retired.** It descends from reveal-or-die and is the cheapest of the ports, so it re-syncs during Phase 1 rather than being written off. **CORRECTED 2026-09-26: it did not.** Phase 1 was marked done without it, so the re-sync is now its own piece of work, `work/tasks/backlog/port-bomber-world-onto-reveal-or-die.md`, and "cheapest" is measured there: 6 commits and 35 files of its own since the shared base, of which 20 no longer exist in reveal-or-die and have to be re-homed rather than merged. Budget one specific cost: its layout predates the convention (`onchain/evm/`, not `contracts/`), so the merge carries a rename as well as a diff.
+**D3. Bomber-world is not retired.** **DONE 2026-09-26**, bomber-world `main` ac1f24aa: a merge that makes it current reveal-or-die plus its brand, then bombs in the contract, then bombs in the client, each green. What it found is in `work/tasks/done/port-bomber-world-onto-reveal-or-die.md`; the one thing still owed is a REDEPLOY with committed records, without which its verify cannot pass in a fresh worktree. It descends from reveal-or-die and is the cheapest of the ports, so it re-syncs during Phase 1 rather than being written off. **CORRECTED 2026-09-26: it did not.** Phase 1 was marked done without it, so the re-sync is now its own piece of work, `work/tasks/backlog/port-bomber-world-onto-reveal-or-die.md`, and "cheapest" is measured there: 6 commits and 35 files of its own since the shared base, of which 20 no longer exist in reveal-or-die and have to be re-homed rather than merged. Budget one specific cost: its layout predates the convention (`onchain/evm/`, not `contracts/`), so the merge carries a rename as well as a diff.
 
 **D4. Hotseat is real commit-reveal, one ACCOUNT per player, with a revealer account.** Three shapes were considered: skipping the commit phase with a client-side freeze, real commit-reveal per player, and the device batching every player's move into one transaction. The last two leak nothing, and the deciding axis is not leakage but **code-path unity**: batching needs a contract entry point no other mode uses, and it caps the player count on a gas limit, so it makes hotseat a different game from the online one. Skipping commits is worse still, because "same code path" is then only superficial and it is paid for with a freeze that has four independent triggers (the poll interval, the epoch tick, RPC-health recovery, `resumeWhenGasArrives`). Real commit-reveal costs nothing extra in UX, because every other mode already has that UX.
 
@@ -1338,7 +1338,7 @@ Four things it should stress, stated as predictions so the test can falsify them
 
 **Acceptance is a measurement, because "revamp the UI" is otherwise unbounded**: zero modified files under `web/src/lib/core/` and zero edited vendored shadcn files in bomber-world; the modal behaviour suites green with the sprite kit installed; and a cascade run afterwards with its conflict events counted against the `with/hosted-account` shape (3 events in 24 merges). That number is the real deliverable: what a full UI revamp costs per cascade, measured instead of feared.
 
-**It depends on D3.** Bomber-world cannot be the test until it is current, so the re-sync comes first, and this is the second thing that re-sync buys.
+**It depends on D3.** Bomber-world cannot be the test until it is current, so the re-sync comes first, and this is the second thing that re-sync buys. **D3 is done (2026-09-26)**, so this is unblocked once bomber-world is pushed. One thing the port found that this phase will meet: the HUD now carries two bomb buttons, and the delayed bomb has no framework intent (`work/notes/observations/controlintent-has-four-intents-and-bomber-world-needs-more.md`).
 
 **D9. The derived secret comes from the SIGNER, and recovering the round is two halves on opposite sides of the seam.** Decided 2026-09-07 while scoping Phase 1, because the first version of that item read as if restoring `makeSecret` were the whole job. It is not, and the part that is missing is the part that costs the stake.
 
