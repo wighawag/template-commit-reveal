@@ -72,7 +72,7 @@ clone from gone, and pushing them costs nothing if they are worth keeping.
 
 ```
 branch.main.remote     = stem              (jolly-roger)
-branch.main.merge      = refs/heads/with/local-signer
+branch.main.merge      = refs/heads/integration
 branch.main.pushRemote = origin            (template-commit-reveal)
 ```
 
@@ -82,11 +82,21 @@ template tree's own vocabulary, where a parent remote is called `stem`.
 Historical commit messages and the notes on this branch still say `variant/full`,
 and deliberately so: that is the branch the work happened on.
 
+The tracked branch moved again on 2026-09-20, from `with/local-signer` to
+`integration`, when this repo's cascade parent became jolly-roger's
+`integration` (`with/local-signer` + `with/embedded-chain`; see
+`"stemBranch": "integration"` in this repo's `fanout.config.json` on the
+`offshoot` branch). Tracking follows the cascade parent, so if that changes
+again, change `branch.main.merge` with it.
+
 So `git push` goes to this repo's own origin, while `git status` compares
-against jolly-roger's `with/local-signer`. That makes `git status` say "your
-branch and 'stem/with/local-signer' have diverged, ahead N and behind M", which
-reads like a problem and is not: **ahead** is our work, **behind** is upstream
-work not yet merged down. Merge it with `git merge stem/with/local-signer`.
+against jolly-roger's `integration`. That makes `git status` say "your branch
+and 'stem/integration' have diverged, ahead N and behind M" (or just "ahead N"
+when fully merged), which reads like a problem and is not: **ahead** is our
+work, **behind** is upstream work not yet merged down. Merge it with
+`offshoot-fanout` from jolly-roger, or by hand with `git merge stem/integration`.
+To check that `main` is pushed, compare with `origin/main`
+(`git rev-list --count origin/main..main`), not with `git status`.
 
 **Fully merged as of `a345d53`**, which took 98 commits down in one go. Do not
 let a backlog build to that size again if it can be helped: the last one had to
