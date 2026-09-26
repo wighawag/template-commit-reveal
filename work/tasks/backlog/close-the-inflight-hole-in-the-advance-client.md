@@ -37,9 +37,13 @@ Two callers make this reachable rather than theoretical. `start()` polls `check(
 
 ## What it costs, honestly
 
-**One reverted transaction, most of the time.** The second advance arrives after the first has moved the phase, so the contract refuses it: that is `_advanceCycle` doing its job, and the client's own comment already says a refused advance is usually benign. The gas is the world's or the player's signer's, and it is small.
+**CORRECTED 2026-09-26. This section used to say "one reverted transaction, most of the time", and that is true only where the contract is the judge.** It was written when the advance client assumed every game's contract re-checked the advance conditions, which is the reference game's property and not the tree's. Since `createCycleAdvance` takes `contractIsTheJudge`, the claim splits in two, and the half it omitted is the one with a stake behind it.
 
-It is worth closing anyway for two reasons that are not about the gas. It makes the `Failed` state appear for a reason that is purely this client's own doing, which pollutes the one signal a human would use to tell a real problem from a benign race. And it feeds `situationOf`'s backoff a failure that carries no information, so the exponential backoff starts counting against a situation that never actually refused anything.
+**Where the contract IS the judge (the template's reference game): one reverted transaction.** The second advance arrives after the first has moved the phase, `_advanceCycle` refuses it, and the gas is small. It is still worth closing there for two reasons that are not about gas: it makes `Failed` appear for a reason that is purely this client's own doing, which pollutes the one signal a human uses to tell a real problem from a benign race, and it feeds `situationOf`'s backoff a failure that carries no information.
+
+**Where it is NOT (reveal-or-die, `THIS_CONTRACT_JUDGES_AN_ADVANCE = false`): the cycle moves TWICE.** `_moveToNextPhase` checks the cycle policy and nothing else, so both advances are accepted: the first opens the reveal phase, the second closes the cycle, on players who have not revealed. `lastEpoch` falls behind, `numMisses` counts it, and at `numMissesAllowed` the avatar is dead. In the one game where this client is the ONLY guard, the duplicate is not a wasted transaction, it is exactly the harm the declaration was introduced to prevent. The test that pins it fails on the old code with the fake chain at cycle 3, commit phase.
+
+**And the window is wider than it was when this was written.** On the `false` path `check()` awaits a cycle refresh, an attendance read and a second refresh before pushing, and the hand press (`advance()`, previously an unconditional send) awaits a refresh and a read of its own, sharing the one flag. So there are two entry points into the window, not one.
 
 **It is NOT the lost-write bug**, and the next person should not go looking for that here. That was webevm executing two things on one checkpoint stack, it is fixed in 0.6.0, and the two advances in that finding were 890 ms apart with a dozen reads between them, which no `inFlight` race can produce.
 
