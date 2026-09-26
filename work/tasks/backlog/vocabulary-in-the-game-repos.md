@@ -44,7 +44,7 @@ project.
 | repo | when | notes |
 | --- | --- | --- |
 | `reveal-or-die` | **NOT here: inside the template's step 3 cascade** | it inherits `game/core/{round,epoch,round-phase}.ts`, so the merge renames those whether anybody plans it or not, and leaves its own ~189 sites behind. There is no moment in between where that repo compiles, so its rename is part of the cascade commit rather than a job that could wait for this task |
-| `bomber-world` | inside D3's re-sync | contracts live in `onchain/evm/`, not `contracts/`, so the tool's paths must come from config. **Not cloned on the machine this was written on**; check before planning |
+| `bomber-world` | ~~inside D3's re-sync~~ **after reveal-or-die, by cascade** | **CORRECTED 2026-09-26.** This row scheduled the rename inside the re-sync; checked in `port-bomber-world-onto-reveal-or-die.md`, that is wrong. After the port its contracts ARE reveal-or-die's plus bombs, so renaming there alone would diverge from its stem across every shared game file and conflict on every later cascade. Its `epoch` follows reveal-or-die's. The port also moves its contracts to `contracts/`, so the `onchain/evm/` paths note no longer applies once it lands |
 | `conquest-v1` | inside its port | second bigint identity, own `empireID` vocabulary, resolution rules unwritten. The port is already the place its `_acquireStarSystem` defect gets fixed |
 | `catacombs` | inside its port | has no epoch clock on the web side at all, so half the client sites do not exist to rename |
 | `stratagems` | inside its port | **renames TWICE**: its contract and its 700-line TypeScript reimplementation of that contract in `common/`, which is a second implementation of the same logic and will not be caught by a contracts-only sweep |
