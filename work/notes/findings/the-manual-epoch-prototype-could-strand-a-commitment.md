@@ -1,7 +1,7 @@
 ---
 title: The manual-epoch prototype could advance the epoch out of a commit phase, stranding every commitment in it
 type: finding
-status: fixed upstream 2026-09-15; fixed in reveal-or-die 2026-09-26 (53d10d35, `moveToNextEpoch` removed) and so in bomber-world by cascade; the unanimity guard in their `_moveToNextPhase` is still missing
+status: fixed upstream 2026-09-15; fixed in reveal-or-die 2026-09-26 (53d10d35, `moveToNextEpoch` removed) and so in bomber-world by cascade; the unanimity guard followed (reveal-or-die 7bf2c797): members decided at setup (custody), attendance counted when asked, `_moveToNextPhase` refuses unless unanimous
 spotted: 2026-09-15
 relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 3, D10, the mode matrix's epoch axis)
 ---
