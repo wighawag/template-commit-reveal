@@ -1,7 +1,7 @@
 ---
 title: The manual-epoch prototype could advance the epoch out of a commit phase, stranding every commitment in it
 type: finding
-status: fixed upstream 2026-09-15; STILL LIVE in reveal-or-die's and bomber-world's contracts
+status: fixed upstream 2026-09-15; fixed in reveal-or-die 2026-09-26 (53d10d35, `moveToNextEpoch` removed) and so in bomber-world by cascade; the unanimity guard in their `_moveToNextPhase` is still missing
 spotted: 2026-09-15
 relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 3, D10, the mode matrix's epoch axis)
 ---
@@ -82,8 +82,8 @@ fix does not travel:
 | repo | state |
 |---|---|
 | `template-commit-reveal` (all four branches) | fixed |
-| `reveal-or-die` | **still has it**, with both TODOs, at `contracts/src/game/internal/UsingGameInternal.sol` |
-| `bomber-world` | still has it (it is where the prototype came from) |
+| `reveal-or-die` | ~~**still has it**~~ **FIXED 2026-09-26** (53d10d35): `moveToNextEpoch` removed from the route, the interface and the internal, pinned by a test that reads the deployed ABI. It had become reachable, because reveal-or-die's offline world is manual |
+| `bomber-world` | ~~still has it~~ **FIXED 2026-09-26** by cascade from reveal-or-die |
 | `conquest`, `catacombs`, `stratagems` | unchecked - conquest and catacombs both carry the same epoch code |
 
 In reveal-or-die it is as unreachable as it was here, for the same reason: its
