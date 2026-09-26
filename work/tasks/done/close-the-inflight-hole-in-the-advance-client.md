@@ -64,3 +64,31 @@ Re-test inside `push()`, or claim the flag before the first `await` rather than 
 **Do not make the advance client verify that the phase moved and retry.** It is rejected in the finding above and the reasoning survives the fix that closed it: it would hide a lost state write inside framework code that every repo in this tree inherits. That reasoning earned its keep once already, since not doing it is what kept the webevm defect visible long enough to be diagnosed and fixed upstream.
 
 `advance.ts` is framework. Anything added here lands in every descendant.
+
+## Done, 2026-09-26
+
+Heads: template `main` 04825694, `with/pixi-js` da397976, `with/nft-identity` a26e425a, `with/all` af686cc5 then 7d11b575, reveal-or-die cc43fb2b. Every cascade merged cleanly; `advance.ts` and `advance.test.ts` are byte-identical to `main` in all five, and still byte-identical between the template and reveal-or-die. reveal-or-die's `world/advance.ts` did not need touching, and its `contractIsTheJudge: THIS_CONTRACT_JUDGES_AN_ADVANCE` wiring survived the merge.
+
+**The shape taken.** The claim is taken before the first read and released in ONE `finally` around the whole pass, never at an individual return, so no early return (and no throw) can keep it. A `check()` arriving mid-pass is QUEUED and re-runs the whole pass, reads included, so it re-reads rather than re-pushes. A hand press arriving mid-pass is DROPPED: queued behind a check that already pushed, it would be an unconditional second send where the contract judges. The post-push refresh now runs inside the claim, so a queued check judges the phase it returns. Both callers in each repo are fire-and-forget, so a queued `check()` resolving before its pass runs changes nothing for them.
+
+**`createSerialisedLoop` was considered and not reused.** Same queueing idea, and its measured argument for queueing is cited in the comment. But the hand press must share the exclusion under a different rule (drop, not queue), which that loop cannot express without changing a second framework file, and the saving is ten lines of flag in a safety-critical one.
+
+**Acceptance, beyond what was asked.** The brief listed the failed-read, not-permitted and backoff returns. Also covered: the stale-reading refusal on the sole-guard path, both early returns of the hand press (failed read, `Refused`), and a pass that throws. And check-vs-press interleaving in both orders, because the press has awaits of its own on the `false` path.
+
+**TEETH, and one claim in the acceptance above was imprecise.** "Reverting the fix" fails the five interleaving tests and ONLY them; it cannot fail the release tests, because the old code claims nothing to leave unreleased. The mutation that bites those is the naive fix (claim early, release only in `push`): all seven release tests fail, plus the queue test and three older tests that cross an early return. A third mutation, correct claim and release but DROPPING a mid-pass check, fails only the queue test. And `offline.e2e.ts` against the naive fix fails exactly as predicted: "Revealed" never appears, because the reveal phase never opens.
+
+**The harm, shown rather than argued.** On the old code the sole-guard interleaving test ends with the fake chain at cycle 3, commit phase: the cycle closed on players who had not revealed.
+
+**Counts, before -> after.** Every server delta is +13, the new tests; nothing else moved.
+
+| node | check | server units | client | contracts | e2e |
+|---|---|---|---|---|---|
+| `main` | 0/0 | 1667 -> 1680 in 145 | 76 in 13 | 47 | 53/53 |
+| `with/pixi-js` | 0/0 | 1676 -> 1689 in 146 | 76 in 13 | 47 | 53/53 |
+| `with/nft-identity` | 0/0 | 1675 -> 1688 in 146 | 76 in 13 | 49 | 53/53 |
+| `with/all` | 0/0 | 1684 -> 1697 in 147 | 76 in 13 | 49 | 53/53 |
+| reveal-or-die | 0/0 | 1830 -> 1843 in 155 | 70 in 12 | 17 | 51/51 |
+
+e2e was measured after only (before-counts for the four template nodes are the recorded 53). `offline.e2e.ts` plays a whole cycle in all five. reveal-or-die's offline round was timed before and after, three runs each, to catch a dropped poke (it would cost a whole poll second): 3.2-3.3 s before, 3.1-3.6 s after, 11.2 s and 11.4 s total. Noise.
+
+**Not done, deliberately.** No verify-and-retry in the client. No unanimity guard in reveal-or-die's contract; that is its own task and this is what makes the client's copy trustworthy meanwhile.
