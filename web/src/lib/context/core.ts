@@ -1,6 +1,5 @@
-import type {GameMembers} from '$game';
 import type {
-	Context,
+	CoreContext,
 	TrackedPaymentRail,
 	TxObserverDebugState,
 } from './types.js';
@@ -103,6 +102,7 @@ import {
 	type ResolvedAppConfig,
 } from './config.js';
 import {startTxObserverLoop} from '$lib/core/tx-observer';
+import type {PollingStatus} from '$lib/core/connection/polling-store';
 import {delegationRegistry} from '$game';
 import {parseImpersonateAddresses} from '$lib/dev-accounts.js';
 
@@ -129,17 +129,17 @@ import {parseImpersonateAddresses} from '$lib/dev-accounts.js';
  */
 export type CoreServices = {
 	/** The chain connection, and how far the app has authenticated to it. */
-	connection: Context['connection'];
-	publicClient: Context['publicClient'];
-	deployments: Context['deployments'];
+	connection: CoreContext['connection'];
+	publicClient: CoreContext['publicClient'];
+	deployments: CoreContext['deployments'];
 	/** The authenticated account, as the connection reports it. */
-	account: Context['account'];
-	accountData: Context['accountData'];
+	account: CoreContext['account'];
+	accountData: CoreContext['accountData'];
 	/**
 	 * Sends from the authenticated account, with a wallet prompt. Prefer it over
 	 * `walletClient`: it resolves the `from` address and the client together.
 	 */
-	accountExecutor: Context['accountExecutor'];
+	accountExecutor: CoreContext['accountExecutor'];
 	/**
 	 * The local signer. Silent. For whatever the app does on the user's behalf.
 	 *
@@ -148,23 +148,23 @@ export type CoreServices = {
 	 * and are silent; anything that moves the player's assets goes through
 	 * `accountExecutor` and prompts, deliberately.
 	 */
-	signerExecutor: Context['signerExecutor'];
+	signerExecutor: CoreContext['signerExecutor'];
 	/** Whether this app signs in, and so whether a signer exists at all. */
 	hasLocalSigner: boolean;
 	/**
 	 * Whether the signer may act for the account. A game gates on this: a move
 	 * sent by an unauthorised signer reverts with `NotDelegate`.
 	 */
-	delegation: Context['delegation'];
+	delegation: CoreContext['delegation'];
 	/** Gas held by the signer: what pays for moves. */
-	signerBalance: Context['signerBalance'];
+	signerBalance: CoreContext['signerBalance'];
 
 	/** Already guarded by the in-flight ledger, so any send records itself. */
-	walletClient: Context['walletClient'];
+	walletClient: CoreContext['walletClient'];
 	/** Gas held by the account that pays. */
-	accountBalance: Context['accountBalance'];
+	accountBalance: CoreContext['accountBalance'];
 	/** Current fee estimates, for sizing what an account can afford to send. */
-	gasFee: Context['gasFee'];
+	gasFee: CoreContext['gasFee'];
 	/**
 	 * The payment rail: a second, wallet-only connection.
 	 *
@@ -173,13 +173,13 @@ export type CoreServices = {
 	 * reports `cannot-send` and cannot buy anything; somebody else's wallet can
 	 * pay on its behalf. A game that sells nothing simply never reads this.
 	 */
-	payment: Context['payment'];
+	payment: CoreContext['payment'];
 	/** Whether that account can cover a given call at current gas. */
-	balanceCheck: Context['balanceCheck'];
+	balanceCheck: CoreContext['balanceCheck'];
 	/** Where a failed transaction's full error text goes, for the details view. */
-	errorDetails: Context['errorDetails'];
-	txObserver: Context['txObserver'];
-	clock: Context['clock'];
+	errorDetails: CoreContext['errorDetails'];
+	txObserver: CoreContext['txObserver'];
+	clock: CoreContext['clock'];
 	/**
 	 * Chain reads only run while this is truthy, or always when it is undefined.
 	 * The app must thread it into anything that polls, or its reads will run with
@@ -187,7 +187,7 @@ export type CoreServices = {
 	 */
 	chainFetchGate: Readable<boolean> | undefined;
 	/** Whether the chain is readable right now, as a store the UI can gate on. */
-	canReadChain: Context['canReadChain'];
+	canReadChain: CoreContext['canReadChain'];
 	/** Whether the app has an RPC of its own, or reads only through the wallet. */
 	hasAppRpc: boolean;
 	/**
@@ -213,7 +213,18 @@ export type CoreServices = {
  * refresh connector, the RPC-health inputs and `refreshChainData`. Anything
  * beyond them core neither sees nor cares about.
  */
-export type AppContext = GameMembers & {
+export type AppContext = {
+	/**
+	 * THE ONE GAME MEMBER CORE READS, and only for what it says here: a refresh
+	 * when a transaction lands, and whether its last poll reached the chain.
+	 * Typed as that requirement rather than as the game's store, so this file
+	 * names no game type, and a game whose store falls short gets the error at
+	 * its own `createGameContext`.
+	 */
+	onchainState: {
+		update: () => Promise<unknown>;
+		status: Readable<PollingStatus>;
+	};
 	/**
 	 * The app's own IO, begun when the context starts and torn down with it.
 	 * Returns its teardown, like every other `start` here.
@@ -1169,7 +1180,7 @@ export function createCoreContext<App extends AppContext>(params: {
 	 */
 	establishConnection?: ConnectionFactory;
 }): {
-	context: Context;
+	context: CoreContext & Omit<App, 'start'>;
 	start: () => () => void;
 } {
 	const {
@@ -1492,10 +1503,12 @@ export function createCoreContext<App extends AppContext>(params: {
 		hasAppRpc,
 		appConfig,
 	});
-	// Core consumes exactly this one by name, and `start` is lifecycle rather
-	// than context, so it is held back from the spread below. The rest goes into
-	// the context without this file needing to know what it is.
-	const {onchainState, start: startApp, ...appContext} = app;
+	// `start` is lifecycle rather than context, so it is held back from the
+	// spread below; everything else, `onchainState` included, goes into the
+	// context without this file needing to know what it is. Core reads
+	// `onchainState` by name too, for exactly what `AppContext` says.
+	const {start: startApp, ...appContext} = app;
+	const {onchainState} = app;
 
 	// Both chain reads that a transaction of ours can invalidate: the messages,
 	// and whether the signer is still a delegate. The registration lands in a
@@ -1590,7 +1603,7 @@ export function createCoreContext<App extends AppContext>(params: {
 		confirmation,
 	});
 
-	const context: Context = {
+	const context: CoreContext & Omit<App, 'start'> = {
 		fatal: {subscribe: fatal.subscribe},
 		gasFee,
 		accountBalance,
@@ -1634,7 +1647,6 @@ export function createCoreContext<App extends AppContext>(params: {
 		// The app's half, spread so a descendant adding members never edits this
 		// literal. See AppContext.
 		...appContext,
-		onchainState,
 	};
 
 	// Dev/debug: expose the whole context on globalThis for console access
