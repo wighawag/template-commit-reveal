@@ -15,7 +15,7 @@
  * the game's chain reads. See the injection point in `core.ts`.
  */
 import {createCoreContext, type ConnectionFactory} from './core.js';
-import {createGameContext, SIGNER_GRANT} from './game.js';
+import {createGameContext, SIGNER_GRANT} from '$game';
 import type {Context} from './types.js';
 
 export type {

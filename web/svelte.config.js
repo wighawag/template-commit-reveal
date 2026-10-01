@@ -64,6 +64,14 @@ const config = {
 			// is that the INHERITED part speaks a narrow vocabulary somebody else can
 			// implement.
 			$ui: 'src/lib/shadcn/ui',
+
+			// WHICH GAME THE FRAMEWORK IS COMPOSED WITH.
+			//
+			// The framework (`context/`, and through it everything that reads the app
+			// context) imports `$game` and never a game's own folder. A game points
+			// this at its own module, which exports what src/lib/placement/game.ts
+			// exports, and every framework file compiles against it unedited.
+			$game: 'src/lib/placement/game.ts',
 		},
 		output: {
 			bundleStrategy: 'split', // code-split per route so the initial

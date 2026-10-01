@@ -23,12 +23,8 @@ import type {
 	MultiAccountDataStore,
 	TransactionMetadata,
 } from '$lib/account/AccountData';
-import type {OnchainStateStore} from '$lib/onchain/state';
 import type {DelegationStore} from '$lib/onchain/delegation';
-import type {ViewStateStore} from '$lib/view';
-import type {Game, Render} from './game';
-import type {BoardState} from '$lib/placement/state';
-import type {BoardView} from '$lib/placement/view';
+import type {GameMembers} from '$game';
 import type {ClockStore} from '$lib/core/clock';
 import type {TransactionObserver} from '@etherkit/tx-observer';
 import type {BalanceCheckStore} from '$lib/core/transaction/balance-check-store';
@@ -88,7 +84,17 @@ export type TxObserverDebugState = {
 
 export type TxObserverDebugStore = Readable<TxObserverDebugState>;
 
-export type Context = {
+/**
+ * The app context: the framework's members, and the game's.
+ *
+ * The game's half is `GameMembers` from `$game` (see svelte.config.js), so
+ * this file names no game type: a framework file reading `Context` compiles
+ * against whichever game the alias points at, and a game's own code still sees
+ * its members fully typed.
+ */
+export type Context = CoreContext & GameMembers;
+
+export type CoreContext = {
 	/**
 	 * Set when the app cannot run at all, with the reason to show the user
 	 * (illegal env combination, or a `?burner=true` that cannot be honoured).
@@ -239,17 +245,6 @@ export type Context = {
 	account: AccountStore;
 	deployments: DeploymentsStore;
 	accountData: MultiAccountDataStore;
-	/**
-	 * The game's chain state. Typed as the template game's board here; a
-	 * descendant points these two at its own shapes, which is the only change
-	 * this file needs.
-	 */
-	onchainState: OnchainStateStore<BoardState & {cycleNumber: number}>;
-	viewState: ViewStateStore<BoardView>;
-	/** The commit-reveal game: cycles, the submission, what is at stake. */
-	game: Game;
-	/** The render surface and the camera that scopes what is loaded. */
-	render: Render;
 	/**
 	 * Whether this browser's signer may act for the account, read from the chain
 	 * and kept live.

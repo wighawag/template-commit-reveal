@@ -462,10 +462,10 @@ export function createAcquisition(params: {
 	 */
 	function authorisationRoute(): AcquisitionAuthorisation | undefined {
 		const $connection = get(deps.connection);
-		const deployments = get(deps.deployments);
+		const {registry} = deps.delegation;
 		const account = delegationAccountOf($connection, {
-			chainId: deployments.chain.id,
-			contract: deployments.contracts.Game.address,
+			chainId: registry.chainId,
+			contract: registry.address,
 		});
 		return acquisitionAuthorisation({
 			registered: isRegistered(get(deps.delegation)),
@@ -510,14 +510,14 @@ export function createAcquisition(params: {
 
 		logger.debug(`authorising: ${authorisation}`);
 		state.set({step: 'Authorising', authorisation});
-		const deployments = get(deps.deployments);
+		const {registry} = deps.delegation;
 		return {
 			delegate: $signer.address,
 			credential: await fetchDelegation({
 				connection: deps.connection,
 				target: {
-					chainId: deployments.chain.id,
-					contract: deployments.contracts.Game.address,
+					chainId: registry.chainId,
+					contract: registry.address,
 				},
 				delegate: $signer.address,
 			}),

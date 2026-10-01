@@ -1,4 +1,5 @@
 import type {AugmentedChainInfo} from '$lib/core/connection/types.js';
+import {operationScope} from '$game';
 import type {TypedDeployments} from '$lib/deployments-store.js';
 import {
 	resolveCreditsConfig,
@@ -84,7 +85,7 @@ export function resolveAppConfig(chain: AugmentedChainInfo): ResolvedAppConfig {
 export function operationScopeAddress(
 	deployments: TypedDeployments,
 ): `0x${string}` {
-	return deployments.contracts.Game.address;
+	return operationScope(deployments);
 }
 
 // Delegation names its contract in `context/core`, not here: it needs the CHAIN

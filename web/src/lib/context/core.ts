@@ -1,3 +1,4 @@
+import type {GameMembers} from '$game';
 import type {
 	Context,
 	TrackedPaymentRail,
@@ -102,6 +103,7 @@ import {
 	type ResolvedAppConfig,
 } from './config.js';
 import {startTxObserverLoop} from '$lib/core/tx-observer';
+import {delegationRegistry} from '$game';
 import {parseImpersonateAddresses} from '$lib/dev-accounts.js';
 
 /**
@@ -211,12 +213,7 @@ export type CoreServices = {
  * refresh connector, the RPC-health inputs and `refreshChainData`. Anything
  * beyond them core neither sees nor cares about.
  */
-export type AppContext = {
-	/** This repo's own: the game, and the renderer driving its canvas. */
-	game: Context['game'];
-	render: Context['render'];
-	onchainState: Context['onchainState'];
-	viewState: Context['viewState'];
+export type AppContext = GameMembers & {
 	/**
 	 * The app's own IO, begun when the context starts and torn down with it.
 	 * Returns its teardown, like every other `start` here.
@@ -1209,7 +1206,7 @@ export function createCoreContext<App extends AppContext>(params: {
 	 */
 	const delegationTarget = {
 		chainId: deploymentsStore.get().chain.id,
-		contract: deploymentsStore.get().contracts.Game.address,
+		contract: delegationRegistry(deploymentsStore.get()),
 	} as const;
 
 	// Reasons the app cannot run. Collected rather than thrown: the context is

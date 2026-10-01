@@ -12,7 +12,7 @@
  * starts IO, which belongs to `start()`. See ADR-0002.
  */
 import {derived, get, type Readable} from 'svelte/store';
-import type {CoreServices} from './core';
+import type {CoreServices} from '$lib/context/core';
 import type {SignerGrant} from '$lib/ui/delegation/grant';
 import {createChainTime, type ChainTimeStore} from '$lib/game/core/chain-time';
 import {
@@ -235,6 +235,13 @@ export type Render = {
 	gameRenderer: GameRenderer<GameSurface>;
 	eventEmitter: CanvasEventEmitter;
 };
+
+/**
+ * What this game adds to the app context, as the framework sees it: every
+ * member of `GameContext` except its lifecycle. `$lib/context/types` spreads
+ * this into `Context` through `$game`, so the framework names no game type.
+ */
+export type GameMembers = Omit<GameContext, 'start'>;
 
 export type GameContext = {
 	onchainState: OnchainStateStore<BoardState & {cycleNumber: number}>;
@@ -466,11 +473,12 @@ export function createGameContext(core: CoreServices): GameContext {
 
 	const onchainState = createPollingOnchainState<BoardState>({
 		publicClient: core.publicClient,
-		deployments,
 		camera,
 		cycleInfo,
 		chainTime,
 		zonesForCamera,
+		cycleDuration:
+			config.cycle.commitPhaseDuration + config.cycle.revealPhaseDuration,
 		read: createBoardReader({publicClient: core.publicClient, deployments}),
 		emptyState: emptyBoard,
 		fetchGate: core.chainFetchGate,
