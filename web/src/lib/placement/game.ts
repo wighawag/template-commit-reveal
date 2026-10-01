@@ -19,6 +19,8 @@ import type {TypedDeployments} from '$lib/core/connection/types';
 
 export {createGameContext, SIGNER_GRANT} from './context';
 export type {GameMembers} from './context';
+/** What `?debug` traces, on top of the framework's own. */
+export {startDiagnostics} from './diagnostics';
 
 /** The contract that records who may act for whom (`UsingDelegation`). */
 export function delegationRegistry(
