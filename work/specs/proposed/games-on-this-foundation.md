@@ -34,7 +34,8 @@ What is genuinely undecided, and what this document is for:
 | `template-commit-reveal` | `jolly-roger@with/local-signer` | fully merged with its stem. Clean. |
 | `reveal-or-die` | `template-commit-reveal@main` | **126 ahead, 0 behind.** Adds ~40 files under `lib/world`, `lib/input`, `lib/ui/loading`, `lib/debug`; deletes `lib/placement` exactly as designed. **Modifies only 10 inherited files**, one of them framework (`game/core/round.ts`, +68, one option). |
 | `bomber-world` | `reveal-or-die@main` | **1067 commits behind.** Different layout (`onchain/evm`, not `contracts`). **CORRECTED 2026-09-26: current.** It was 1481 behind by the time it was ported (D3); it is now reveal-or-die cc43fb2b plus bombs and its brand, with a `stem` remote and an `offshoot` config, on `contracts/`. |
-| `catacombs`, `stratagems` | none | separate stack generation; dormant by decision, see below. |
+| `stratagems` | `template-commit-reveal@main` | **CORRECTED 2026-10-24: joined, and no longer dormant.** One `--allow-unrelated-histories` merge (stratagems 32635ebf), a `stem` remote and an `offshoot` config; omits 140 paths (the template's contracts, its reference game, and until its port adopts the app context, the routes that read it); supplies its own `$app-specific` module. Being ported onto the framework by its own plan (stratagems `work/plans/join-template-commit-reveal.md`). |
+| `catacombs` | none | separate stack generation; dormant by decision, see below. |
 | `conquest-v1` | `jolly-roger@main` directly | 24 ahead, own pre-seams `lib/game` and `lib/render`, move pipeline unported. |
 
 ### Baselines, measured at the start of Phase 0
@@ -279,7 +280,7 @@ jolly-roger@main
 integration                     the integration node, stem: [with/local-signer, with/embedded-chain]
 └─ template-commit-reveal@main              framework + address-keyed reference game
       │                                        (stratagems' identity shape)
-      ├─ stratagems                            dormant, compile-only member (twgl)
+      ├─ stratagems                            joined 2026-10-24, being ported (twgl, its own host)
       ├─ with/pixi-js                          pixi + assetpack + one sprite (D11)
       ├─ with/nft-identity                     identity is a token; acquisition proven
       └─ with/all                              the single integration branch (D11)
@@ -292,7 +293,7 @@ integration                     the integration node, stem: [with/local-signer, 
 
 **Why `with/nft-identity` and not a second template repo.** Four of the five games identify a player by a token (`avatarID`, `characterID`, `empireID` over an owned avatar); one identifies by address. Decision 3 in `HANDOFF.md` deliberately makes the reference game address-keyed so that `PlayerIdentity` is exercised as a type parameter rather than assumed. That decision is right and stays. But it leaves identity ACQUISITION (mint, buy, deposit, choose which one you are playing) with no user in the template, and unproven code in a template is the thing everyone regrets. A branch where the reference game becomes token-keyed gives acquisition a user without giving up the address case.
 
-**Why the dormant games still join the tree.** Stratagems and catacombs are not being revived now. Joining them anyway is worth it for one reason: a compile-only member is a real test of whether a seam fits, and it is the cheapest test there is. A cascade that breaks stratagems' build has found something. The commitment is deliberately small: they participate in `check`, not in e2e, and their `verify` command says so.
+**Why the dormant games still join the tree.** Stratagems and catacombs are not being revived now. Joining them anyway is worth it for one reason: a compile-only member is a real test of whether a seam fits, and it is the cheapest test there is. A cascade that breaks stratagems' build has found something. The commitment is deliberately small: they participate in `check`, not in e2e, and their `verify` command says so. **Stratagems joined on 2026-10-24 and is no longer dormant** (its maintainer decided to port it onto the framework). Its first finding was the one this paragraph predicts: the app context was the reference game's own file, reaching 65 of the 240 framework files, which made a game that is not a variant of the reference game unable to compile the framework. U2's `$app-specific` slot fixed that at jolly-roger and here, and with it stratagems compiles the framework with no framework file edited or omitted. Its verify is the tree's, `check` and `test:unit`, not `check` alone.
 
 **Where a game gets a service layer from.** This is the one place the tooling does not currently reach. Cross-repo inheritance in `offshoot-fanout` is single-branch (`stemBranch` is a string), and in-repo integration nodes (`stem: [a, b]`) only combine branches inside one repo. So a game cannot inherit `jolly-roger@with/messaging` and `template-commit-reveal@with/nft-identity` through the tool.
 
@@ -1528,5 +1529,5 @@ Nothing in the design above is waiting on an answer. What is outstanding is defe
 
 - ~~**Whether this template ever stems from jolly-roger's `with/all`**~~ **DECIDED 2026-09-18: IT DOES, and the branch is called `integration` rather than `with/all`.** The trigger named here was "a second game wants the same service layer"; what actually fired was different and worth recording, because it is a shape this list should expect again. The embedded chain is a capability this template needs and hosted sign-in is one it does not, so the template needs a COMBINATION of two of jolly-roger's branches - and `stemBranch` is a single string that cannot be combined with `stem`, by design and with a hard error, so a descendant cannot integrate two parent branches itself. **The integration node is forced by the tool, not chosen for convenience.** Note this remains a different question from D11's integration branch, which is THIS repo's own over its own two axes; the two are one level apart and neither implies the other.
 - **Several identities per account** (D6). Reopens with conquest's port, which is the only consumer; the two architectural rules are kept meanwhile so it stays cheap.
-- **Stratagems and catacombs beyond compiling** (Decision 1). Reopens if a cascade breaks their build, which is the point of having them in the tree.
+- **Catacombs beyond compiling** (Decision 1). Reopens if a cascade breaks its build, which is the point of having it in the tree. Stratagems is past this: its port was decided on 2026-09-30 and is planned in its own repo.
 - **What a game's deliberate exit costs**, where the game has one (D5). reveal-or-die's exit tile answers it for reveal-or-die; conquest's and catacombs' are theirs to design.
