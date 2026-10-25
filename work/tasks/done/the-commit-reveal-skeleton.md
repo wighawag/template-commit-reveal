@@ -7,6 +7,12 @@ blockedBy: []
 
 # The composition every game writes is two-thirds the same, and the third game is about to write it again
 
+> **DONE, 2026-10-25**, on every node: `main` 2dd771d3 (ec2fb899 the skeleton and the reference game on it, c4e3bd62 its 14 tests, ae9db8f8 the camera, render seam and `poll`, 2dd771d3 the planning factory gets the clock and the raw board), `with/pixi-js` 2b74563f, `with/nft-identity` 94e26196, `with/all` 50a65df2, reveal-or-die 245f8c2d, bomber-world 0051d863, stratagems 4c2241ed. The skeleton is `createCommitRevealGame<T extends GameTypes>(core, parts)` in `web/src/lib/game/core/commit-reveal-game.ts`; the game's types go in as ONE record because TypeScript cannot infer type parameters through the factories the skeleton calls.
+>
+> Measured: every node's verify green with exactly the skeleton's 14 tests added (`main` 1711 + 78 to 1725 + 78, reveal-or-die 1873 + 72 to 1887 + 72, bomber-world 1921 to 1935, stratagems 1413 to 1427, the `with/*` branches likewise), e2e 53 on `main` and 51 on reveal-or-die. The extended stub test (a stub game on the skeleton, its board an indexer-shaped store, the reference game removed) checks to 0 in all of `web/`. Unchanged body lines between the two compositions: 176 to 42 (132 to 30 without punctuation-only lines), all of it the parts list, a framework key naming each game's identically named module; accepted by the maintainer as the target ("keep it low, not dumbly strict") rather than reorganising game modules to pass under 20.
+>
+> Found: reveal-or-die runs the board's refresh policy twice (the poller's internal pair and its own); kept, and recorded on reveal-or-die's `work` branch. The full account is in stratagems' port plan, step 10a-client.
+
 ## Start here, from a cold context
 
 ```sh
