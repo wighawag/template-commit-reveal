@@ -35,8 +35,10 @@ The consequence for this repo is not cosmetic: **hosted (email/social) sign-in i
 Every game descends from `template-commit-reveal`, including stratagems and catacombs. An earlier version of this document drew stratagems hanging off the parent branch instead; that was wrong. They are deferred on GROUNDS OF EFFORT (a different generation of the stack, see the section at the end), not because they sit somewhere else in the tree. The seams have to fit them.
 
 Each descendant is its own repo, tracks its parent as the `stem` remote, and
-merges down. Contracts are NOT inherited: every game writes its own. The
-template's contracts are a reference to start from.
+merges down. A game's contracts are its own, with one exception since
+2026-10-25: the commit-reveal base (`contracts/src/commit-reveal/`, ADR-0005),
+which every game keeps and builds its game on. The template's game contracts
+are a reference to start from.
 
 ## Where things stand
 
@@ -291,8 +293,15 @@ The e2e run happens in a throwaway git worktree, and it carries the WORKING TREE
 
 ## Decisions already made (do not relitigate without reason)
 
-1. **Contracts stay independent per game.** Not inherited. The template's are a
-   reference. Conquest's are 11/17 diverged from the old template's already.
+1. **A game's contracts are its own; the commit-reveal mechanism is kept.**
+   Revised 2026-10-25 (the maintainer, from stratagems' port): the reserve, the
+   bonded commitment, the chain of chunks, the cycle policies, advance,
+   attendance, delegation through `_playerOf` and both settlements are a library
+   over namespaced storage plus a convenience contract under
+   `contracts/src/commit-reveal/`, which a game keeps and extends with its typed
+   action and its resolution. The template's game is a reference built on it.
+   Conquest's contracts were 11/17 diverged from the old template's, which is
+   why this waited until the mechanism could be separated from a game.
 2. **Identity is a type parameter**, not a naming convention. Three real models:
    `address` (template, stratagems), `avatarID` bigint (reveal-or-die,
    bomber-world), `empireID` bigint (conquest). Stratagems keys commitments by
@@ -492,6 +501,8 @@ The first attempt made this self-healing: the adapter quietly acknowledged any s
 So `web/src/lib/placement/missed-reveal.ts` reads the chain (not local storage, so it still works from another browser or after clearing site data), the HUD states what happened and what it cost, committing is blocked with a reason instead of failing at the contract, and the forfeit is settled only on a deliberate press. `beforeCommit` on the adapter refuses a commitment that cannot succeed and says what to do about it.
 
 The rule to keep: **the framework may spend gas on the player's behalf to protect their stake (that is what auto-reveal is), and must never spend the stake itself without being asked.**
+
+**SINCE 2026-10-25 THERE ARE TWO SETTLEMENTS (ADR-0005), and this section still holds.** Shown the chunks, anyone may settle, the game's penalty for those actions is forfeited and the surplus of a bond rounded up to whole chunks comes back; the client does this when it still has the committed turn (`storage.ts` keeps it aside). Not shown them, only the player or their signer may settle, and the whole remaining bond goes. Either way it is pressed by the player, never done for them. The paragraph below is the history it replaced.
 
 **A TURN CAN NOW BE HALF REVEALED, and this section still holds, on purpose.** A turn longer than `actionsPerReveal` is opened in several transactions, so a commitment can sit with some of its chunks applied and the rest never arriving. `acknowledgeMissedReveal(player)` closes that in ONE call and takes no chunk and no secret: the bond falls by each chunk's cost as it lands, so what is left earmarked is exactly what was never opened, and the contract needs nothing from the caller to settle it. Requiring the secret would have made settling depend on the very thing that failed - and since anyone may settle anyone's missed reveal here, a settlement only the absent player could perform is not one. The reasoning and the rejected alternatives are ADR-0002 (this branch); the two tests are "settles a half-revealed turn in ONE call, and frees the next cycle" and "will not let the cycle close on a half-revealed turn", the second being where the stranding hazard actually lives in this framework.
 

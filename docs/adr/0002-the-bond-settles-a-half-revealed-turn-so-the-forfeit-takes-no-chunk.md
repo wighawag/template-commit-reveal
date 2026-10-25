@@ -1,7 +1,9 @@
 ---
-status: accepted
+status: superseded in part by 0005
 date: 2026-09-17
 ---
+
+> **Superseded in part, 2026-10-25, by ADR-0005.** The rule below stands; the one-call settlement by anyone does not. The commit-reveal base now offers two settlements: shown the chunks, by anyone, costing the game's penalty and returning the surplus; not shown them, by the player or their delegate only, costing the whole remaining bond. The reference game moved into case 2 (it bonds whole chunks), as this ADR said it would have to.
 
 # The forfeit takes no chunk, because the bond already knows what is outstanding
 

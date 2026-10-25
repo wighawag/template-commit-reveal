@@ -1,12 +1,14 @@
 ---
 title: The bond is public, so bonding the exact cost tells everyone how many actions the commitment hides
 type: finding
-status: OPEN
+status: CLOSED
 spotted: 2026-09-17
 relates-to: web/src/lib/placement/commit-reveal.ts, contracts/src/game/internal/UsingGameInternal.sol, docs/adr/0002, the credits work
 ---
 
 # A commitment that hides WHAT is being done, and announces HOW MUCH
+
+> **CLOSED, 2026-10-25**, by the second option below, with both halves moved together as this note said they must. The reference client bonds a whole number of chunks (`bondFor` in `web/src/lib/placement/config.ts`, capped at the reserve and never below the cost), and the commit-reveal base (`contracts/src/commit-reveal/`) settles a missed reveal shown its chunks by forfeiting only the game's penalty and returning the surplus. Without the chunks only the player may settle, and the whole bond goes. ADR-0005 has the reasoning; it supersedes ADR-0002 in part. The bond now discloses how many reveal transactions a turn takes, which the reveals disclose anyway.
 
 ## The leak
 

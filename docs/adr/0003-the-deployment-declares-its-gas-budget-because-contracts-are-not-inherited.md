@@ -18,6 +18,8 @@ client.** Every repo here inherits `web/src/lib` by merge. No repo inherits
 is the reason a descendant may still be un-chunked. So a gas figure living in a
 client file is a measurement that travels away from the thing it measured.
 
+> **The premise narrowed, 2026-10-25, and the decision did not move.** Since the commit-reveal base (`contracts/src/commit-reveal/`, ADR-0005) a game KEEPS one part of the template's contracts: the mechanism. Its GAME is still its own, and what a reveal costs is overwhelmingly what the game's resolution does with each action (the reference game's fresh cell against `with/nft-identity`'s free one is the measurement below). So "a game's contracts are its own" is the true form of the sentence above, and a gas figure still belongs with the deployment that runs them.
+
 That is not a hypothesis. `with/nft-identity` measures **99,102** for a first
 commit and **374,085** for a full fresh chunk, against `main`'s **116,898** and
 **535,561**, because a placement costs nothing there - custody of the avatar is
