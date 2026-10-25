@@ -7,6 +7,10 @@ blockedBy: []
 
 # The commit-reveal contracts are a mechanism with a reference game inside it, and no game can build on them yet
 
+> **DONE, 2026-10-25**, on every node: `main` 85814a55 (cb8594a4 the base, 1047db94 the reference game on it, a4a8b3f4 the stub game and the base's 8 tests, cab311cf the client bonds whole chunks and settles with its chunks, 0b37887a `AGENTS.md`, 85814a55 the base's suite standing alone), `with/pixi-js` 50d94b14, `with/nft-identity` a367702a (overrides re-pointed at the base; a settlement shown the chunks still seizes the avatar), `with/all` b94eddec, reveal-or-die df647852, bomber-world 9a145889, stratagems 5c817de4 (the base omitted until its step 10b).
+>
+> Measured: contracts `main` 47 to 56, `with/pixi-js` 47 to 56, `with/nft-identity` 49 to 58, `with/all` 49 to 58, reveal-or-die 21 to 29, bomber-world 23 to 31, stratagems 69; web verify green everywhere (`main` 1725 to 1732 + 78, the other template nodes +7 likewise, the games unchanged); e2e 53 on `main`. Gas: reveal 533,508 of 600,000 (fell 2,017: the reveal event no longer carries the placements), commit 117,714 of 150,000; no declared figure raised. ADR-0005 has the reasoning; the full account is in stratagems' port plan, step 10a-contract.
+
 Drafted from stratagems' port plan (`join-template-commit-reveal` branch, `work/plans/join-template-commit-reveal.md`, step 10a-contract), where the decisions below were taken with the maintainer on 2026-10-24 and 2026-10-25. That file is the record of the measurements; this is the brief.
 
 ## Start here, from a cold context
