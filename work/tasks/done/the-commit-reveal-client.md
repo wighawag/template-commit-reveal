@@ -7,6 +7,10 @@ blockedBy: []
 
 # The client of the commit-reveal base lives inside the reference game, which every game omits
 
+> **DONE, 2026-10-26**, on every node: `main` b31b8d53 (bb798eaf the module `web/src/lib/game/core/commit-reveal/`, b31b8d53 its own tests), `with/pixi-js` d54fb7d5, `with/nft-identity` 60402a9e (its custody reserve kept whole; `config.ts` took main's split with the branch's facts re-applied), `with/all` 18463c7a, reveal-or-die 8039e707 and bomber-world 69a7a288 (compiled unused), stratagems b59877a3 (compiled unused until its step 6b).
+>
+> Measured: `placement/` 4,101 lines to 2,677; web verify `main` 1732 to 1750 (+ 78), `with/pixi-js` 1741 to 1759, `with/nft-identity` 1740 to 1758, `with/all` 1749 to 1767, reveal-or-die 1887 to 1909 (+ 72), bomber-world 1935 to 1957, stratagems 1427 to 1449, check 0 errors everywhere (stratagems' 2 known warnings); e2e 53 on `main`; the extended stub test (a two-field move composing the skeleton and every part of the module) checks to 0. The moved files (`cycle`, `advance`, `errors`) arrive in a game that omits `placement/` as rename/delete conflicts: take the module's file, then `apply-omissions.sh`. The full account is in stratagems' port plan, step 6a.
+
 Drafted from stratagems' port plan (`join-template-commit-reveal` branch, `work/plans/join-template-commit-reveal.md`, step 6a), where it was decided with the maintainer on 2026-10-26. That file is the record of the measurements; this is the brief.
 
 ## Start here, from a cold context
