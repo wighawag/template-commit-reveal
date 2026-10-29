@@ -1,6 +1,7 @@
 ---
 title: reveal-or-die's and bomber-world's recover-submission e2e deletes localStorage keys the submission no longer lives under
 type: observation
+status: fixed (reveal-or-die 38107b60, carried to bomber-world)
 spotted: 2026-10-29
 relates-to: reveal-or-die and bomber-world web/e2e/tests/recover-submission.e2e.ts; web/e2e/fixtures/game.ts (forgetSubmissionAndReload)
 ---

@@ -9,7 +9,7 @@ blockedBy: []
 
 Specified in stratagems' plan (`step-8` branch, `work/plans/join-template-commit-reveal.md`, "Step 8": P3, P7, P8, P9 and the Do list's item 4; the log from "step 8: stopped at item 1" on, Q8-1 to Q8-11), on jolly-roger's account data on synqable 0.3.1 (`lifecycle$`, `writeDurably`, `read()`, `createAccountData({fields})`, jolly-roger `work:work/tasks/done/account-data-on-synqable-0.2.md`). It is what `with/fuzd` (item 5) plugs into.
 
-## Done, 2026-10-29, on local preview branches `s8/<branch>`, NOT pushed
+## Done, 2026-10-29, built on local preview branches `s8/<branch>`, reviewed, and pushed with the maintainer's approval
 
 On `main` (`s8/main`, from `origin/main` 3e5ee87e), test-first, one commit per item:
 
@@ -20,19 +20,23 @@ On `main` (`s8/main`, from `origin/main` 3e5ee87e), test-first, one commit per i
 5. `38b10aa4` The submission in the account data (P8 b, Q8-2, Q8-9). `SUBMISSION_FIELDS` (`commit-reveal/storage.ts`, `defineSchema`) adds `submissions: map<StoredPlan>` and `committedTurns: map<StoredTurn>` to the account data, through `createAccountData({fields})` in the template's `context/core.ts` (`buildChainConfig`); `CoreContext['accountData']` is `AccountDataStore<SubmissionFields>`. Keys: a plan at `${chainId}_${contract}_${identity}` (lowercased), a committed turn at that key `_${cycleNumber}_${commitmentHash}`. A plan is emptied to `{turn: null}`, never removed (see the finding on tombstones); a committed turn is written once at commit, never overwritten or cleared by the submission, and pruned by `settled(cycleNumber)` (on `Revealed` and after a missed-reveal settlement) keeping the latest `COMMITTED_TURNS_KEPT` (3); no expiry otherwise (`deleteAt` `Number.MAX_SAFE_INTEGER`). `createAccountDataSubmissionStorage<TAction, TExtensions, TIdentity>({accountData, format, chainId, contract, identity})` is the storage (`ready` from `lifecycle$`, `saveDurably` through `writeDurably`, `changes` from `watchField` of both fields, `committedTurns(cycle)`, `settled(cycle)`); `SubmissionStorageFormat` is now `{encode, decode}` only. `PersistedSubmission` gains `commitmentHash`. The submission takes `liveCommitment` (the skeleton passes the missed-reveal reader's), restores this cycle's committed turn first and then the plan, lets the chain's hash choose between two devices' turns, takes up as committed a plan whose hash the chain holds, offers nothing the chain does not hold (so recovery speaks), and adopts a record arriving after ready under `adopt()`'s guard (a committed record replaces a local plan or failed commit; a synced plan only into `Idle`). The missed-reveal reader's `committedTurn(player, cycleNumber)` may return several records, each tried against the head, and `onSettled({player, cycleNumber})`. The reference game moved onto it; the base's `createSubmissionStorage`, `committedTurnKey(format, key)`, `loadCommittedTurn` and the reference game's `__placement_*` keys are deleted, not kept as a fallback (nothing deployed: `git ls-files contracts/deployments` empty). The e2e loses a submission with `forgetSubmissionAndReload` (empties both fields before the app loads).
 6. `f89b27af` Tests over the real account data, and a gap they found: the skeleton's per-identity storage did not pass `committedTurns`, `changes` and `settled` through. It is now `currentIdentityStorage(identity, storageFor)`, exported, with readiness and changes following the identity.
 
+7. `d02587f5` and `099666f5`, from an independent review (a reviewer subagent; the first pass BLOCKED, the second APPROVED with two P2 notes, both then fixed): a turn the chain holds at a LATER chunk (the head moves to the next chunk's hash as each lands) is now recognised on restore through a new optional `adapter.isHeadOf({actions, secret, head})` (the base's: any chunk of the chain), where before a reload mid-reveal dropped the turn and the rest of it was never sent; `reveal()`, `reportRevealed()` and `closeEarlierTurn()` check the generation after every await, as `commit()` did, so an identity change inside one ready account (an avatar, a token) cannot let the previous identity's finishing reveal clear the next one's storage or overwrite its state; `onProgress` checks it too; `leaveContext` forgets the shown turn; an adopted turn is saved with its commitment hash.
+
 Every Q8-8 case has a test: a read, a plan, a commit and a reveal before ready; a cycle that turns while loading; an account switch, and one during a commit (fake storage and real account data); an identity arriving after `start()`; a late synced record adopted, and a committed one replacing a local plan (fake and two real account-data stores over a watchable adapter); two devices committing in one cycle; a failed durable write refusing the commit (fake and real); a load error blocking play (skeleton, HUD and real); a reveal by another sender reported `Revealed` (cycle turn, restore, reveal, failed fallback); a scheduling failure leaving the commit standing (adapter and submission). The stub game of `commit-reveal-game.test.ts` declares `extensions: TestLayer` and the types are proven end to end with no cast (a wrong `expectTypeOf` fails `pnpm check`). The tombstone rule and the chain-hash choice were mutation-checked (each mutation turns its test red).
 
 **Measured** (check, unit server + client; e2e `E2E_RPC_PORT=8555 E2E_PORT=4183`):
 
 | node | before | after |
 |---|---|---|
-| `main` | 0/0, 1822 + 78, e2e 54/54 | 0/0, 1878 + 78, e2e 54/54 (4.7 min), ports clear |
-| `with/pixi-js` | 0/0, 1831 + 78 | 0/0, 1887 + 78 |
-| `with/nft-identity` | 0/0, 1830 + 78 | 0/0, 1886 + 78 |
-| `with/all` | 0/0, 1839 + 78 | 0/0, 1895 + 78 |
-| reveal-or-die `main` | 0/0, 1981 + 72 | 0/0, 2034 + 72 |
-| bomber-world `main` | 0/0, 2029 + 72 | 0/0, 2082 + 72 |
-| stratagems `main` | 0 errors 2 warnings, 1518 + 72 | 0 errors 2 warnings (the same two, legacy app), 1571 + 72 |
+| `main` | 0/0, 1822 + 78, e2e 54/54 | 0/0, 1883 + 78, e2e 54/54 (4.9 min), ports clear |
+| `with/pixi-js` | 0/0, 1831 + 78 | 0/0, 1892 + 78 |
+| `with/nft-identity` | 0/0, 1830 + 78 | 0/0, 1891 + 78 |
+| `with/all` | 0/0, 1839 + 78 | 0/0, 1900 + 78 |
+| reveal-or-die `main` | 0/0, 1981 + 72 | 0/0, 2039 + 72, e2e 52/52 |
+| bomber-world `main` | 0/0, 2029 + 72 | 0/0, 2087 + 72, e2e 53/53 |
+| stratagems `main` | 0 errors 2 warnings, 1518 + 72 | 0 errors 2 warnings (the same two, legacy app), 1576 + 72 |
+
+(The games' e2e were run on the trees before `d02587f5`, whose change is in `game/core` only and is covered by the template's e2e; reveal-or-die's and bomber-world's unit runs needed reruns for the pre-existing wallet-connector flake, see its observation.)
 
 `check-dangling-imports` clean in reveal-or-die, bomber-world and stratagems. The cascade (`offshoot-fanout --dry-run` reach: the three layers, reveal-or-die, bomber-world through it, stratagems `main`; nothing else) was merged by hand on `s8/*` with the tool's messages; the only conflicts were modify/delete on the omitted reference game, resolved by `apply-omissions.sh`. reveal-or-die's `world/storage.ts` and `world/context.ts` moved onto the account data in its merge (the plan's allowance); the same change merged cleanly into bomber-world's copies, so bomber-world had no hand edit. stratagems `main` has no `stratagems/submission-storage.ts` or `context.ts` (they are on `join-template-commit-reveal` only), so nothing moved there.
 
@@ -40,7 +44,8 @@ Every Q8-8 case has a test: a read, a plan, a commit and a reveal before ready; 
 
 ## Not done here, and why
 
-- **reveal-or-die's and bomber-world's `e2e/tests/recover-submission.e2e.ts`** destroy the submission by deleting `__world_submission_*` keys, which no longer exist; measured on reveal-or-die: it fails at "there was a stored submission to destroy". The fix is the template's `forgetSubmissionAndReload` in each game's e2e, a hand edit to a game file the session was told to ask about. See the observation.
+- **reveal-or-die's and bomber-world's `e2e/tests/recover-submission.e2e.ts`** destroyed the submission by deleting `__world_submission_*` keys, which no longer exist (it failed at "there was a stored submission to destroy"). Fixed with the maintainer's approval in reveal-or-die (`38107b60`: `storedSubmissionRecords` and `forgetSubmissionAndReload` in `e2e/fixtures/board.ts`), carried to bomber-world by its merge; both full e2e suites pass.
+- `settled(cycle)` prunes every committed turn at or before `cycle` beyond the latest three, which could include an older MISSED turn not yet settled; the reference game is protected because a missed reveal blocks committing. Pruning only the settled cycle is the safer rule if a game lets play continue past an unsettled miss (a review note, not changed here).
 - Other games' HUDs (reveal-or-die, bomber-world) get the blocking (`readyToPlay`) but not the "saved turn is loading" line: their HUD is theirs. `game.savedTurn` is there for them.
 - stratagems' `submission-storage.ts` and `context.ts` (integration branch) must move onto `createAccountDataSubmissionStorage` at the stratagems session's next merge; their imports of `createSubmissionStorage` and `loadCommittedTurn` no longer compile.
 
