@@ -1,7 +1,7 @@
 ---
 title: The commit gas budget was measured without a payee, so a first commit paying a reveal scheduler ran out of gas
 type: finding
-status: fixed on main (644347e3), not yet cascaded
+status: fixed on main (644347e3), cascaded 2026-10-30
 spotted: 2026-10-30
 relates-to: contracts/rocketh/config.ts (COMMIT_GAS), contracts/test/js/GasBudget.test.ts, game/core/commit-reveal/adapter.ts (the commit's gas limit), with/fuzd
 ---
@@ -12,6 +12,6 @@ The scheduler seam (step 8 item 4, P3) makes `makeCommitment` carry the schedule
 
 **Fixed on `main`** (`644347e3`): `GasBudget.test.ts` measures the paid first commit with the same 10% headroom rule (red at 150,000), and `COMMIT_GAS` is 175,000. `creditsGasMultiplier` is derived from it, so a credit's price rises by about 3%.
 
-**Still to do:** cascade `main` to `with/pixi-js`, `with/nft-identity`, `with/all`, reveal-or-die and bomber-world (whose contracts are their own: each game's deployment declares its own `commitGas`, and a game that adopts a scheduler has to measure its paid first commit too), and stratagems, whose `makeCommitment` also forwards to a payee.
+**Cascaded** the same day: `with/pixi-js` (main's contracts, clean); `with/nft-identity` and `with/all` MEASURED their own (a paid first commit 134,358 against the 125,000 they declared, now 155,000). reveal-or-die, bomber-world and stratagems `main` took the merge with no tree change: their contracts and budgets are their own and `GasBudget.test.ts` is omitted there. **Still owed by each game that adopts a scheduler**: measure its own paid first commit (stratagems' `makeCommitment` forwards to a payee, so its step 8 item 6 has to).
 
 **The general lesson:** a seam that adds a payment to a transaction changes that transaction's gas, and the budget is a limit, not an estimate. When a seam adds an argument with a cost, the gas test gains the case in the same change.

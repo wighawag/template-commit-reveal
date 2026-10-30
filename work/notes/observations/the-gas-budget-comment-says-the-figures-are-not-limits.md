@@ -1,6 +1,7 @@
 ---
 title: rocketh/config.ts still says the gas figures are not passed as limits, and they are
 type: observation
+status: fixed on main 2026-10-30 (36fdf6a6)
 spotted: 2026-10-30
 relates-to: contracts/rocketh/config.ts (the comment above COMMIT_GAS), game/core/commit-reveal/adapter.ts, contracts/test/js/GasBudget.test.ts
 ---

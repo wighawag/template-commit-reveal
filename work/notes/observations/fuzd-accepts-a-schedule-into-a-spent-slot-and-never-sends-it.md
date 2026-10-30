@@ -1,6 +1,7 @@
 ---
 title: fuzd 0.12 accepts a schedule into a slot it has already broadcast, never sends it, and reports it broadcast
 type: observation
+status: handed to fuzd (work/tasks/backlog/reject-a-schedule-into-a-spent-slot.md), the maintainer deciding to reject
 spotted: 2026-10-30
 relates-to: fuzd (@fuzd/server 0.12.1, @fuzd/scheduler 0.11.1), with/fuzd's slot `cycle_<n>`
 ---
