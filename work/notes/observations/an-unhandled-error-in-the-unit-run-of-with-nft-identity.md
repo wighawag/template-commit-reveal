@@ -26,3 +26,7 @@ This error originated in "test/lib/context/tab-navigation.test.ts" test file.
 ```
 
 So it is a timer in `@etherplay/wallet-connector-ethereum` 0.4.0 that outlives `tab-navigation.test.ts`'s environment and touches `window` after it is torn down: timing-dependent (2 to 12 errors per occurrence), pre-existing, and nothing to do with the change being verified. The fix is in that test (stop or fake the connector's timers) or in the connector (guard `window`); the test is jolly-roger's, so that is where it belongs.
+
+## Seen on `main` too, 2026-10-30
+
+During step 8 item 5's fix of the commit gas budget, `main` (`s8/main` at `644347e3`, a contracts-only change) showed it in two of its unit runs (18 and 2 `window is not defined` errors, every test passing), and passed on the run between them. So it is `main`'s, inherited, and still jolly-roger's to fix.
