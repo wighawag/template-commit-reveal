@@ -10,6 +10,9 @@
     "with/nft-identity": {
       "stem": "main"
     },
+    "with/fuzd": {
+      "stem": "main"
+    },
     "with/all": {
       "stem": [
         "with/pixi-js",
