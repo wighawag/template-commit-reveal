@@ -13,16 +13,20 @@
     "with/fuzd": {
       "stem": "main"
     },
+    "with/indexer": {
+      "stem": "main"
+    },
     "with/all": {
       "stem": [
         "with/pixi-js",
         "with/nft-identity"
       ]
     },
-    "with/fuzd-pixi": {
+    "with/fuzd-pixi-indexer": {
       "stem": [
         "with/fuzd",
-        "with/pixi-js"
+        "with/pixi-js",
+        "with/indexer"
       ]
     }
   },
