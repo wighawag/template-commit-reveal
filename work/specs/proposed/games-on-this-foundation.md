@@ -289,6 +289,8 @@ integration                     the integration node, stem: [with/local-signer, 
          └─ conquest-v1                        moves off jolly-roger onto here
 ```
 
+**The indexer is not at jolly-roger after all (2026-10-31, stratagems' step X1, its PX6).** The tree above draws `with/indexer` at jolly-roger `main`; it was built at THIS repo instead, as `template-commit-reveal@with/indexer` from `main`, because a jolly-roger layer reaches a game only through `integration`, so into every game, and what the host needs (the cycle stamp, the offline world's worker) is below jolly-roger anyway. stratagems stems from `with/fuzd-pixi-indexer` (`[with/fuzd, with/pixi-js, with/indexer]`), which replaced `with/fuzd-pixi`. See `work/tasks/done/with-indexer-the-framework-hosts-a-games-processor.md`.
+
 **The renderer axis and `with/all` are D11**, taken after this decision and after Decision 2's asset-pipeline row was scoped. `main` carries the render seam and the host that needs no install; `pixi.js` is 79M and earns a node, with the art pipeline on it because assetpack emits a pixi manifest and means nothing away from it. Every real game therefore stems from `with/all` rather than from `with/nft-identity` alone. catacombs is listed under it for identity, not for pixi: it is twgl and supplies its own host, as stratagems does.
 
 **Why `with/nft-identity` and not a second template repo.** Four of the five games identify a player by a token (`avatarID`, `characterID`, `empireID` over an owned avatar); one identifies by address. Decision 3 in `HANDOFF.md` deliberately makes the reference game address-keyed so that `PlayerIdentity` is exercised as a type parameter rather than assumed. That decision is right and stays. But it leaves identity ACQUISITION (mint, buy, deposit, choose which one you are playing) with no user in the template, and unproven code in a template is the thing everyone regrets. A branch where the reference game becomes token-keyed gives acquisition a user without giving up the address case.
@@ -369,7 +371,7 @@ The A/B split (fixed roster versus open entry) is real but it is not the top of 
 | **Epoch advance** | fixed timer / timer with early advance / unanimity only | **contract** (`_epoch()`), and the client's epoch store | prototyped in bomber-world: `ManualEpoch` state, `_moveToNextEpoch`, `_moveToNextPhase`. Its two TODOs are exactly the missing work |
 | **Reveal agency** | this browser / scheduler / fallback / third party | seam, done | `autoReveal` is a three-way and `commit()` already carries secret, epoch and `revealDueAt`. No fuzd adapter in this lineage yet (`with/fuzd`, Wave 4) |
 | **Identity** | address / token / token plus controlling entity | type parameter, done. **Acquisition has no seam** | Decision 1 above |
-| **State source** | poller / indexer / local simulation | seam, one implementation | indexer adapter unwritten; `with/indexer` is Wave 1 |
+| **State source** | poller / indexer / local simulation | seam, two implementations | the poller on `main`; the indexer host on `with/indexer` (2026-10-31), the reference game its first user and stratagems its second |
 | **Opponents** | humans / NPC keys / hotseat | client: several ACCOUNTS against one world | the worlds doc's cheap case: a world gets a context, an identity gets a connection |
 
 ### The contract side is cheaper than it looks
