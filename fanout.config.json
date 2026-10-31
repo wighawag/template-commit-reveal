@@ -18,6 +18,12 @@
         "with/pixi-js",
         "with/nft-identity"
       ]
+    },
+    "with/fuzd-pixi": {
+      "stem": [
+        "with/fuzd",
+        "with/pixi-js"
+      ]
     }
   },
   "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit"
