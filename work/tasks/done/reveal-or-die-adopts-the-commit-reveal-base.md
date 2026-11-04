@@ -42,3 +42,20 @@ Its `UsingGameInternal` differs from the template's by 1,422 lines: avatar custo
 - their verify and e2e pass;
 - the order of reveals still never changes the outcome (a test replaying one cycle in two orders);
 - the maintainer has approved every push.
+
+## Landed, 2026-11-05 (reveal-or-die main 4aaa00bd, bomber-world main c2d706d9)
+
+Built with the maintainer's decisions of 2026-11-04 (reveal-or-die `work`, `tables-for-reveal-or-die.md`), which narrow the plan above in two places:
+
+- **No chunks yet.** One chunk per turn: the hash is the base's one encoding with `furtherActions` zero, `actionsPerReveal` holds the longest turn that can resolve (11 in reveal-or-die, 13 in bomber-world: moves, two bombs, an exit) and the constructor refuses less, and the routes take no `furtherActions`, because the move and bomb budgets are counted per call and a chained turn would get them per link. Chunking needs those counters kept per turn first.
+- **The forfeit counts a miss and kills nothing.** `_forfeit` takes nothing beyond the miss, which `lastCycleNumber` already counts; killing on a missed reveal is that one function, later.
+
+What the port needed that the plan did not say:
+
+- **A dead avatar has to be released.** Death is computed when asked and the base's attendance is an O(1) tally, so a dead member is counted until somebody sends the game's permissionless `releaseDeadAvatar` (checks it is in the world and dead, calls `_stopWaitingFor`, keeps the seat). The client's attendance reader releases the dead the board shows; a dead offline seat releases itself. The base is unchanged.
+- **Custody is membership under every policy**, since the base refuses a commit from a non-member; reveal-or-die used to enrol only under the manual policy.
+- **Withdraw refuses an open commitment**, or the tally would keep a commit counted for a member who left and a subset could reach unanimity.
+- **The game's resolution event is renamed** (`ActionsResolved`): the base emits its own `CommitmentRevealed` on every reveal.
+- **bomber-world's bombs needed one new condition**: a missed reveal's settlement never resolves actions, or settling cycle E-1 would write `_bombs[E]`/`_explosions[E]` while E's reveals read them. Written in `BombLogic`; the instant-bomb mutation still fails the two-orders test on the base.
+
+Acceptance: reveal-or-die contracts 55 passing (49 + 6), bomber-world 57 (51 + 6), both settlement routes and the dead-avatar route tested, the two-orders test kept; check 0/0, unit 2174 + 75 and 2264 + 75, e2e 53 + 2 skipped and 55 + 2 skipped. Pushed with the maintainer's approval.
