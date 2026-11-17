@@ -13,7 +13,7 @@ Built from stratagems' port plan, step R1b (`main`, `work/plans/join-template-co
 
 **The decision**: an optional `choices` on `TableOptionField` (`{value, label}[]`), rendered as a select; `clampOptionValue` keeps a field with choices to one of them and reads a select's string, its default otherwise. The reference game sends no options and is unchanged.
 
-## Done, 2026-11-14, on local preview branches `pr1b/*`, NOT pushed
+## Done, 2026-11-14, on local preview branches `pr1b/*`, since pushed
 
 **`main`** (from `origin/main` dc4b08bc):
 

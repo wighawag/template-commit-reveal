@@ -9,7 +9,7 @@ blockedBy: [tables-for-a-fixed-set-of-players, one-tab-per-offline-world]
 
 The template's spec decided hotseat (`games-on-this-foundation.md`, D4: real commit-reveal, one ACCOUNT per player, a revealer account, built as a scheduler adapter handed the payload at commit time). Built from stratagems' port plan, step H1 (`join-template-commit-reveal` branch, `work/plans/join-template-commit-reveal.md`), its decisions H1-1 to H1-11 taken with the maintainer on 2026-11-02.
 
-## Done, 2026-11-02, on local preview branches `ph1/*`, NOT pushed
+## Done, 2026-11-02, on local preview branches `ph1/*`, since pushed
 
 **jolly-roger `with/embedded-chain`** (its task `an-embedded-wallet-with-several-accounts`): `announceEmbeddedWallet({accounts})` and `select(address)`; the world's connection factory is its own function (`embeddedConnectionFactory`); a client test (real Chromium) that the world's connection follows a selection with no picker and no prompt, and that a signature derives that account's own browser key, the same each time.
 

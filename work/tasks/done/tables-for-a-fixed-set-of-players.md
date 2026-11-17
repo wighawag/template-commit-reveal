@@ -15,7 +15,7 @@ Decided in stratagems (its plan `work/plans/join-template-commit-reveal.md` on i
 - **A game was a deployment.** Every client piece is keyed by the game contract's address (the submission, the delegation, fuzd's slot, the indexer's database), so a game at an address of its own needed nothing new of them, but nothing could make one cheaply: a full deployment of the reference game is millions of gas.
 - **`$lib/indexer`'s stamp refused the hybrid policy** (`TimedWithEarlyAdvance`), which is the one a fixed set wants: the reveal phase opens the moment everyone has committed, the next cycle the moment everyone has revealed, and the clock moves a table on when somebody vanishes.
 
-## Done, 2026-11-01, on local preview branches `pl1/*`, NOT pushed
+## Done, 2026-11-01, on local preview branches `pl1/*`, since pushed
 
 **`main`** (from `origin/main` 4d56cbe5):
 

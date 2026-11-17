@@ -11,7 +11,7 @@ Found by stratagems' step 8 (local `step-8`, `work/notes/observations/the-commit
 
 **The mechanism.** `commit()` wrote the pre-commit record durably (`saveDurably`, `committed: false`, the secret and the hash) before sending, as the file comment requires. Once the commitment was on chain it wrote the committed record (`committed: true`, `revealScheduled`, the layers' `extensions`; in `commit-reveal/storage.ts`'s account-data storage also the `committedTurns` entry, written once) with a plain `storage.save`, which goes through synqable's 100 ms local-storage debounce and an asynchronous save, and set `Committed` at once.
 
-## Done, 2026-10-30, on local preview branches, NOT pushed (awaiting the maintainer's approval)
+## Done, 2026-10-30, on local preview branches, since pushed
 
 On `main` (preview branch `fix/committed-record-durable` from `origin/main` e92f4a21, worktree `~/dev/worktrees/template-commit-reveal/fix/committed-record-durable`), test-first, one commit:
 

@@ -9,7 +9,7 @@ blockedBy: [hotseat-in-the-offline-world, the-handover-waits-for-the-persons-dat
 
 Built from stratagems' port plan, step A1 (`join-template-commit-reveal` branch, `work/plans/join-template-commit-reveal.md`, section "Step A"), its decisions A1-1 to A1-14 taken with the maintainer on 2026-11-02: a game's strategy behind a framework seam, called from the game's own pass (`played.ts` still declines a shared one); a played seat's turn decided once per cycle in the commit phase and stored in `localStorage` BEFORE its commit, the secret still `playedSeatSecret`; a level per world seat chosen at the lobby (`random`, today's derived turn and the default, or a level the game offers); the reference game's `greedy`, scored by its own `Simulation` route.
 
-## Done, 2026-11-02, on local preview branches `pa1/*`, NOT pushed
+## Done, 2026-11-02, on local preview branches `pa1/*`, since pushed
 
 **`main`** (from `origin/main` 9c7a6a43):
 

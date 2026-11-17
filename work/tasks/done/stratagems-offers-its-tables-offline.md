@@ -13,7 +13,7 @@ Built from stratagems' port plan, step OT2 (`main`, `work/plans/join-template-co
 
 **What changed here**: one line, `stratagems: "stratagems' plan, step OT2"` removed from `KNOWN_GAPS`. Nothing else. reveal-or-die's and bomber-world's entries stand until OT3.
 
-## Done, 2026-11-15, on local preview branches `pot2/*`, NOT pushed
+## Done, 2026-11-15, on local preview branches `pot2/*`, since pushed
 
 - `main` (from `origin/main` 701420ce): `706b27c6`.
 - Cascaded along the path to stratagems' stem, as `offshoot-fanout` merges: `with/pixi-js` `2cdc7a41`, `with/fuzd` `78cee602`, `with/indexer` `8b054b45` (each `merge main`), `with/fuzd-pixi-indexer` `8d53dff6`, `2a91f571`, `3d062a7c` (merging `with/fuzd`, `with/pixi-js`, `with/indexer`), all clean. stratagems merged `3d062a7c` on its `step-OT2`.

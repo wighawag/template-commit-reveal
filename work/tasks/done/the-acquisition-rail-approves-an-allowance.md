@@ -13,7 +13,7 @@ Found by stratagems' step L2 (its plan `work/plans/join-template-commit-reveal.m
 
 `$lib/game/acquire`'s `Acquisition` is ONE call, and the account that must approve is the PAYER, which the rail chooses inside `run` (`payerFor`: the account itself, or another wallet connected only then). So a game could not send the approval beforehand without approving from the wrong address whenever another wallet pays.
 
-## Done, 2026-11-01, on local preview branches `pl2/*`, NOT pushed
+## Done, 2026-11-01, on local preview branches `pl2/*`, since pushed
 
 **`main`** (from `origin/main` cbaef472): `a2490777` an optional `allowance: {token, amount}` on `Acquisition`. When it is there, the rail, after the payer is connected and the signature taken, reads `allowance(payer, address)` and, when it falls short, sends `approve(address, amount)` from the payer and waits for its receipt, then makes the call (`approveIfShort`, exported, with `ERC20_ALLOWANCE_ABI`). Never an unlimited allowance. Reading first means a retry after a reload (the approval landed, the call did not) asks for one transaction. A new state step, `Approving`, between `Authorising` and `Acquiring`, so a game's HUD can say why the wallet opens twice. A game declaring no allowance (the reference game, every world with a global approval) is unchanged. Three unit cases (approves exactly the amount from the payer to the spender, sends nothing when the allowance covers it, fails on a refused approval). The README says what a game supplies.
 

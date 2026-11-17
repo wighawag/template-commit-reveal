@@ -15,7 +15,7 @@ Drafted and decided in stratagems as P9-1, P9-2 and P9-9 of its step 9 (`join-te
 - **The pixi host could only draw pixel art**: `resolution: 1`, no antialiasing, rounded positions and `image-rendering: pixelated`, all fixed. stratagems' chosen look is smooth (gradients, fine rings).
 - **`render-host-boundary.test.ts` named the selector by path** (`src/lib/placement/render/index.ts`), so every game either edited it (reveal-or-die: `world/render`) or omitted it (stratagems).
 
-## Done, 2026-10-31, on local preview branches `p9/*`, NOT pushed
+## Done, 2026-10-31, on local preview branches `p9/*`, since pushed
 
 - **`main`**: the boundary test finds the selector through the play page's `import {loadCanvasComponent} from '$lib/...'`, resolving `$lib/a/b` to `src/lib/a/b.ts` or `src/lib/a/b/index.ts`, with four cases of its own (`6bc08808`). The canvas-2d host accepts `smooth` and ignores it, so the two hosts keep the same props (`4e0990cf`).
 - **`with/pixi-js`**: `smooth` on `PixiCanvas.svelte`, its settings a pure function in `pixi/surface.ts` with four cases: pixel art by default; smooth is the device ratio, antialiasing, unrounded positions and `image-rendering: auto`. Never `autoDensity`: with the host's `resizeTo: canvas` it locks the canvas at pixi's default 800 by 600 (measured). Texture filtering stays `nearest` by default in `assets.ts`; a smooth game sets `linear` on the textures it makes. README paragraph (`1bf49544`).

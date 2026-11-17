@@ -18,7 +18,7 @@ Built from stratagems' port plan, step OT3 (`main`, `work/plans/join-template-co
 - `web/test/offline-tables-boundary.test.ts`: `KNOWN_GAPS` is empty (reveal-or-die's and bomber-world's entries deleted, and stratagems' with them at `with/nft-identity` and `with/all`, which OT2 did not reach). The list stays for a game that joins short.
 - Tests: `test/lib/game/lobby/offline-table.test.ts` (4: the creator sends as the first account through the wallet's provider, a value included; a record the chain does not hold stakes and starts nothing; the labels with levels and an async identity, and without), and the world test's table boot now runs through `seatTheOfflineTable`, asserting its three steps.
 
-## Done, 2026-11-15, on local preview branches `pot3/*`, NOT pushed
+## Done, 2026-11-15, on local preview branches `pot3/*`, since pushed
 
 - `main` (from `origin/main` 706b27c6): `a7d29050` (the helpers, the reference game on them, `KNOWN_GAPS` empty), `94734fe5` (the creator's request takes any ABI and a value).
 - Cascaded as `offshoot-fanout` merges, all clean: `with/pixi-js` `27dc9827`, `with/nft-identity` `0bb1179a`, `with/fuzd` `b553349e`, `with/indexer` `6a26882e` (each `merge main`, twice), `with/all` `356ab087` (merging `with/pixi-js`, `with/nft-identity`), `with/fuzd-pixi-indexer` `a050fdc9` (merging `with/fuzd`, `with/pixi-js`, `with/indexer`). Each node's own `offline.ts` took the change with no conflict (`with/nft-identity` and `with/all` had the same `openTheTable` and `seatLabelsOf` as `main`).

@@ -9,7 +9,7 @@ blockedBy: [tables-for-a-fixed-set-of-players]
 
 Found by stratagems' LAN rehearsal (its plan's step L2), decided with the maintainer on 2026-11-02. On a LAN box every newcomer starts with no ether, and creating a table is the first thing a host does: `createTablesLobby`'s `create` sent `createGame` straight from the account, so a creator with nothing got the node's raw "the total cost ... exceeds the balance of the account" under the button, and no remedy.
 
-## Done, 2026-11-02, on local preview branches `pl2/*`, NOT pushed
+## Done, 2026-11-02, on local preview branches `pl2/*`, since pushed
 
 **`main`**: `5f93a089` (merged as `9df6ac5e`, beside jolly-roger's gas-tip floor) `create` goes through `balanceCheck.ensureCanAfford` with the account's balance, as every transaction the account pays for does, so the insufficient-funds modal names the shortfall and offers the faucet; a creator who stops there goes back to idle, which is not a failure to paint again. Two unit cases (`test/lib/game/lobby/create-table.test.ts`): the check is asked first with the account paying and what it returns is sent; an `InsufficientFundsError` sends nothing and leaves the lobby idle. In stratagems' rehearsal, a host with 0 ETH creates a table from `/lobby/` through the modal's "Get ETH".
 

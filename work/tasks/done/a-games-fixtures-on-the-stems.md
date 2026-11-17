@@ -12,7 +12,7 @@ Built from stratagems' port plan, step C1 (`main`, `work/plans/join-template-com
 
 **What changed here** (`main` cca00cf3): the two functions exported, with a note saying why; `pending-operation.e2e.ts` calls `selectContract(page)` before the Write tab. The account index range check C-5 also named was already in `connectPageAs` (from 2026-11-04), which `connectedPage` calls, so nothing was added for it.
 
-## Done, 2026-11-15, on local preview branches `pc1/*`, NOT pushed
+## Done, 2026-11-15, on local preview branches `pc1/*`, since pushed
 
 - `main` (from `origin/main` 94734fe5): jolly-roger `integration` merged twice (6944bf1e, 0ea456ef), carrying template-svelte's `check-stem-drift.mjs` (run by `apply-omissions.sh` during a merge; this repo's variant of that script merged with both halves kept, clean) and jolly-roger's `e2e-link-built.mjs`; then cca00cf3.
 - Cascaded as `offshoot-fanout` merges, all clean: `with/pixi-js` 50b06acc, `with/nft-identity` 034cedc6, `with/fuzd` d77fa430, `with/indexer` ba29f069, `with/all` b0b4f2b5, `with/fuzd-pixi-indexer` 70d41990. reveal-or-die merged `with/all` (its own `pending-operation.e2e.ts` kept: it already selected its contract), bomber-world took it from there; stratagems takes `with/fuzd-pixi-indexer` in its step C2.

@@ -13,7 +13,7 @@ Built from stratagems' port plan, step OT1 (`main`, `work/plans/join-template-co
 
 **The decisions, in one line each**: a game with online tables (a `lobby` in its `$app-specific` module) offers them offline too, held by `web/test/offline-tables-boundary.test.ts` with a `KNOWN_GAPS` list (stratagems until its OT2, reveal-or-die and bomber-world until OT3), the lobby offering such a game the world only meanwhile (OT1-1); the lobby asks "a table or the world?", a table's seats 2 to 8, its cycles and the game's options in one component both lobbies render (OT1-2); every record explicit from its first build, `offline-world:mode`, `:cycles`, `:game-options` and `:table`, a pre-OT1 world's defaults written on its first boot (OT1-3); one table per world (OT1-4); the boot at a table guarded by what the chain holds, the table created by the first person's account through the world's wallet, every seat staked at it, started by the tab (OT1-5, OT1-6); the Forfeit kept, the panel naming the seats as the lobby does (OT1-7); the played seats commit nothing before the start or after the end (OT1-8); the Manual cycle at an offline table (OT-2, OT1-9).
 
-## Done, 2026-11-15, on local preview branches `pot1/*`, NOT pushed
+## Done, 2026-11-15, on local preview branches `pot1/*`, since pushed
 
 **`main`** (from `origin/main` f11ecaf8):
 

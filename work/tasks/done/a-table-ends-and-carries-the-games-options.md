@@ -9,7 +9,7 @@ blockedBy: [tables-for-a-fixed-set-of-players]
 
 Built from stratagems' port plan, step L4 (`join-template-commit-reveal` branch, `work/plans/join-template-commit-reveal.md`, section "Step L4"), its decisions L4-10 to L4-12 and L4-22 taken with the maintainer on 2026-11-02: the end is generic (a cycle count set at creation, nothing committed or advanced after it, a hook a game's routes read), so it lands in the commit-reveal base and the lobby client, the reference game its first user; the score and the settlement are stratagems'. A table also carries an opaque `bytes32 gameOptions` the base stores and never reads, because a route of the base cannot call a game's hook: the game's own routes read it.
 
-## Done, 2026-11-03, on local preview branches `pl4/*`, NOT pushed
+## Done, 2026-11-03, on local preview branches `pl4/*`, since pushed
 
 **`main`** (from `origin/main` 221b8a45):
 

@@ -13,7 +13,7 @@ Built from stratagems' port plan, step T2 (`main`, `work/plans/join-template-com
 
 **The decision**: the roster records its block, and a page at a table RESOLVES the table before composing its context, so the record is true and the link is checked in one place. Rejected: an asynchronous indexer source (it fixes one reader and leaves the record false), the block in the link (whoever shares it could hide history), a factory mapping (an extra storage write), scanning for `GameCreated` (range-limited).
 
-## Done, 2026-11-12, on local preview branches `pt2/*`, NOT pushed
+## Done, 2026-11-12, on local preview branches `pt2/*`, since pushed
 
 **`main`** (from `origin/main` dae11875):
 

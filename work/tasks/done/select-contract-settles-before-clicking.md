@@ -19,7 +19,7 @@ So the click is dropped whenever a frame falls between Playwright's press and it
 
 **Could a player hit it?** Only with a scroll in the same frame as a press: a wheel or touch scroll mounts the button in the frame after the first tick, long before a human's press. So it is a test artifact of Playwright's forced scroll, plus a narrow bits-ui gap (finding `a-release-on-the-select-scroll-button-drops-the-press.md`), not a defect a player meets.
 
-## Done, 2026-10-30, on local preview branches, NOT pushed (awaiting the maintainer's approval)
+## Done, 2026-10-30, on local preview branches, since pushed
 
 On `main` (preview branch `fix/select-contract-settles` from `origin/main` ee68c542, worktree `~/dev/worktrees/template-commit-reveal/fix/select-contract-settles`), one commit, `e4d964ea`: `selectContract` waits, in the page, until the option's box is the same for three frames and no animation runs in the list; brings the option into view itself (`scrollIntoView({block: 'nearest'})`, a no-op when it is visible); waits for the list to come to rest again (the scroll event, the scroll button, bits-ui's realignment); and only then clicks. The click then needs neither a retry nor a scroll. Rather than (b) re-clicking an ignored option (it would hide whatever drops a click), (c) the page taking the contract from the URL (a product change for a test's sake, and the widget would go untested), or a patch of bits-ui (a third-party gap a player does not meet; recorded as a finding).
 

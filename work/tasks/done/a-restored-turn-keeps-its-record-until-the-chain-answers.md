@@ -11,7 +11,7 @@ Found by stratagems' step 8 (`origin/step-8`, `work/notes/observations/a-restore
 
 **The mechanism.** `restore()` found the earlier cycle's committed record and called `closeEarlierTurn`, which CLEARED the stored record at once, set `Idle`, asked the chain (`commitmentStatus`), awaited `onSettled`, and wrote `Revealed` or `Missed` only if `generation` had not moved and the state was still `Idle`. `leaveContext()` moves `generation` whenever the storage's readiness goes false (the account data reloading) or the identity changes, a flicker included (`undefined`, then the same player). The `restore()` after it found the record gone, so nothing asked again, and the in-flight answer was dropped.
 
-## Done, 2026-10-30, on local preview branches, NOT pushed (awaiting the maintainer's approval)
+## Done, 2026-10-30, on local preview branches, since pushed
 
 On `main` (preview branch `fix/restored-turn-report` from `origin/main` 36fdf6a6, worktree `~/dev/worktrees/template-commit-reveal/fix/restored-turn-report`), test-first, one commit:
 

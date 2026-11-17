@@ -11,7 +11,7 @@ Found by stratagems' hotseat e2e (its port plan, step H2, `join-template-commit-
 
 **The defect.** After an account switch the new account's data loads; meanwhile the submission reads `Idle` and `plan` drops what it is given (what the storage holds may be a committed turn). The handover went from `Switching` to `Playing` as soon as the connection was signed in as the next person, so a person could be shown a board that ignored their clicks without a word: in stratagems a click selected the cell and planned nothing. H1-8 (in this task's predecessor, `hotseat-in-the-offline-world`) had decided `Switching` lasts through "the new account's data loaded"; as built it did not. An online player switching account in their wallet meets the same window, without any cover.
 
-## Done, 2026-11-02, on local preview branches `ph1b/*`, NOT pushed
+## Done, 2026-11-02, on local preview branches `ph1b/*`, since pushed
 
 **`main`** (from `origin/main` fd7f8cc3):
 

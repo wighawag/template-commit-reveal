@@ -14,7 +14,7 @@ Decided in stratagems (its plan `work/plans/join-template-commit-reveal.md` on i
 - **No node of the tree hosted an indexer.** stratagems carried 696 lines of hosting it had written for itself (two worker entries, the worker choice, the indexed `OnchainStateStore` with its cycle stamp, the follower, and the Node runner its contracts tests use), all generic but for a database prefix, an ABI type, a processor import and a contract name. Every 24-hour game would copy them.
 - **Not on `main`**, because the state layer follows the cycle length (the two fast games read logs or poll), and not at jolly-roger, whose layers reach games only through `integration`, so into every game.
 
-## Done, 2026-10-31, on local preview branches `px1/*`, NOT pushed
+## Done, 2026-10-31, on local preview branches `px1/*`, since pushed
 
 - **`with/indexer`**, a new node from `main` 4d56cbe5:
   - `8d4d7633` etherfold's and libSQL's dependencies; `contracts/utils/indexer.ts`, `indexInProcess` (a processor in Node over SQLite, GraphQL read back with `localExecutor`), compiled into `dist/utils` and exported as `./utils/*`.
