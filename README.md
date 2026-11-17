@@ -16,4 +16,4 @@ The test for whether something belongs here rather than on `main`: **is it addre
 - `docs/plans/` - design notes that are not specs.
 - `HANDOFF.md` - the working document for the template-building effort. Scaffolding: delete it when the work is done.
 
-`fanout.config.json` on the `offshoot` branch lists only `main`, and `branches` is opt-in, so this branch is excluded from the cascade by construction rather than by being remembered.
+`fanout.config.json` on the `offshoot` branch lists only node branches (`main` and its `with/*` layers), and `branches` is opt-in, so this branch is excluded from the cascade by construction rather than by being remembered.
