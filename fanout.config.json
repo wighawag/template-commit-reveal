@@ -22,6 +22,12 @@
         "with/nft-identity"
       ]
     },
+    "with/nft-identity-fuzd": {
+      "stem": [
+        "with/nft-identity",
+        "with/fuzd"
+      ]
+    },
     "with/fuzd-pixi-indexer": {
       "stem": [
         "with/fuzd",
