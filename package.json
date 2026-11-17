@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "lan": {
-    "pnpmDepsHash": "sha256-iIyoH0cSMp921zvh8QVW6OpusRNzRdtV8RPYmBCJDuM="
+    "pnpmDepsHash": "sha256-Iitz+vfqaErJD/kheIYovadLcAhcEjXfKWoTlFsucJg="
   },
   "packageManager": "pnpm@10.28.1",
   "devDependencies": {
@@ -46,6 +46,8 @@
     "web:serve": "pnpm --filter ./web serve",
     "web:check": "pnpm --filter ./web check",
     "web:check:watch": "pnpm --filter ./web check:watch",
+    "---------------------- SERVICES ----------------------": "",
+    "fuzd:dev": "pnpm --filter ./helper-services/fuzd dev",
     "---------------------- DEPLOY ----------------------": "",
     "test": "pnpm contracts:test",
     "build": "ldenv --git -d localhost pnpm contracts:build @@MODE ~~ pnpm web:build @@MODE ~~ @@",
