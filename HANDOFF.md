@@ -1,5 +1,7 @@
 # Handoff: making template-commit-reveal the shared commit-reveal template
 
+> **Superseded as a status record, 2026-11-17.** Its "Where things stand" table and its "What is left" list describe the tree of late September 2026 and are no longer true: reveal-or-die, bomber-world and stratagems have all been ported onto this template since (stratagems by its own plan, `work/plans/join-template-commit-reveal.md` on stratagems' `main`), and infinite-gambit descends from `with/fuzd-pixi-indexer`. The tree's live plan is `docs/plans/template-tree-features.md` on jolly-roger's `work`, measured in `docs/analysis/template-tree-2026-11-16.md` beside it. What below is still true and useful (the decisions, the two rules, who signs what, the survey of the seams) still wants moving to where it belongs, as the next paragraph asks, before this file is deleted.
+
 Working document for whoever picks this up. **Delete it when the work is done** - it is scaffolding, not documentation, and a stale handoff is worse than none.
 
 Before deleting, move anything still true and still useful to where it belongs, because some of this outlives the task:
