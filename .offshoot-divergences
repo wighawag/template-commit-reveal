@@ -146,3 +146,12 @@ web/playwright.config.ts                               the game suite with fuzd 
 web/src/lib/placement/context.ts                       the reference game composes the fuzd scheduler and chooses its reveal mode
 web/src/lib/placement/ui/GameHud.svelte                the HUD says who reveals the turn
 web/src/lib/placement/ui/hud.ts                        the same, in the HUD's model
+
+[with/nft-identity-fuzd]
+# AND BELOW THIS LINE, WHAT `with/nft-identity-fuzd` MODIFIES FROM BOTH ITS
+# STEMS, `with/nft-identity` and `with/fuzd`: where fuzd's reveals meet a
+# player who is an avatar (README.nft-identity-fuzd.md).
+
+web/src/lib/placement/context.ts                       both stems' compositions: the avatar's identity provider handed its reads, beside fuzd's scheduler
+web/e2e/tests/fuzd.e2e.ts                              fuzd's suite with a player as an avatar: the identity read after the mint, one claimant per cell
+web/e2e/tests/fuzd-fallback.e2e.ts                     fuzd's fallback suite with a player as an avatar, the same adjustment
