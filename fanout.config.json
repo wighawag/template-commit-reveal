@@ -13,8 +13,14 @@
     "with/fuzd": {
       "stem": "main"
     },
+    "upstream/with/indexer": {
+      "stemBranch": "with/indexer"
+    },
     "with/indexer": {
-      "stem": "main"
+      "stem": [
+        "main",
+        "upstream/with/indexer"
+      ]
     },
     "with/all": {
       "stem": [
