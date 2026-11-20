@@ -1,7 +1,7 @@
 ---
 title: A world's local signer broadcast to the APP's node, not to the world's chain
 type: finding
-status: FIXED 2026-11-20 upstream in jolly-roger (steps K1a and K1b of its template-tree-features plan): `remote.ts` and `types.ts` at `with/embedded-chain` (f1465d66), the consumer in `context/core.ts` at `integration` (7caf20bb); this repo takes the stem's lines since K1b (its merge 1635111d); pinned by jolly-roger's `test/lib/core/connection/world-node-url.test.ts` and `test/lib/context/world-node-url.test.ts`; the hosted case still open
+status: FIXED 2026-11-20 upstream in jolly-roger (steps K1a and K1b of its template-tree-features plan): `remote.ts` and `types.ts` at `with/embedded-chain` (f1465d66), the consumer in `context/core.ts` at `integration` (7caf20bb); this repo takes the stem's lines since K1b (its merge 8bb83556); pinned by jolly-roger's `test/lib/core/connection/world-node-url.test.ts` and `test/lib/context/world-node-url.test.ts`; the hosted case still open
 spotted: 2026-09-22
 relates-to: work/specs/proposed/games-on-this-foundation.md (Phase 4, "the connection is a parameter now"), web/src/lib/context/core.ts, web/src/lib/core/connection/remote.ts, web/src/lib/core/connection/types.ts
 ---
