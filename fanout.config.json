@@ -42,5 +42,5 @@
       ]
     }
   },
-  "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit"
+  "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit && pnpm --filter ./contracts typescript"
 }
